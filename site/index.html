@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>One-Page Arcade · by gumdrop</title>
+  <meta name="description" content="A collection of single-file web experiences: generative art, music toys, puzzles, and educational demos.">
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <!-- Navigation -->
+  <nav class="nav">
+    <div class="nav-container">
+      <div class="nav-brand">
+        <div class="nav-icon">🎮</div>
+        <div class="nav-text">
+          <h1>One-Page Arcade</h1>
+          <span class="nav-subtitle">by gumdrop</span>
+        </div>
+      </div>
+      
+      <div class="nav-links">
+        <a href="#featured" class="nav-link">Games</a>
+        <a href="https://github.com/yourusername/one-page-arcade" target="_blank" class="nav-link">
+          GitHub
+          <svg class="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+          </svg>
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <section class="hero">
+    <div class="container">
+      <h2 class="hero-title">Browser-Native Experiences</h2>
+      <p class="hero-description">
+        A curated collection of single-file web applications. No installs, no frameworks, no servers—just vanilla HTML, CSS, and JavaScript.
+      </p>
+    </div>
+  </section>
+
+  <!-- Category Filter -->
+  <section class="filter-section">
+    <div class="container">
+      <div class="filter-buttons" id="category-filter">
+        <button class="filter-btn active" data-category="all">All</button>
+        <button class="filter-btn" data-category="art">Art</button>
+        <button class="filter-btn" data-category="music">Music</button>
+        <button class="filter-btn" data-category="games">Games</button>
+        <button class="filter-btn" data-category="utilities">Utilities</button>
+        <button class="filter-btn" data-category="learning">Learning</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Featured Games -->
+  <section id="featured" class="games-section">
+    <div class="container">
+      <h3 class="section-title">Featured</h3>
+      <div class="games-grid games-grid-featured" id="featured-games">
+        <!-- Featured game cards injected by JS -->
+      </div>
+    </div>
+  </section>
+
+  <!-- More Games -->
+  <section class="games-section">
+    <div class="container">
+      <h3 class="section-title">More Experiences</h3>
+      <div class="games-grid games-grid-more" id="more-games">
+        <!-- More game cards injected by JS -->
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-content">
+        <p>Built with vanilla web technologies. All games run locally in your browser.</p>
+        <p class="footer-credits">
+          Inspired by the creative constraint movement · 
+          <a href="https://gumdrop.me" target="_blank">gumdrop.me</a>
+        </p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="/main.js"></script>
+</body>
+</html>

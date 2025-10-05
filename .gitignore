@@ -1,0 +1,24 @@
+# Cascade agent files (development only)
+.cascade/
+seed.md
+PROJECT_STATUS.md
+DEPLOYMENT.md
+TESTING_CHECKLIST.md
+
+# Deprecated/scaffolding
+sample_site/
+dist/
+data/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Vercel
+.vercel

@@ -1,0 +1,108 @@
+{
+  "featured": [
+    {
+      "id": "g01",
+      "title": "Fractal Flame Sketcher",
+      "category": "art",
+      "description": "Create stunning mathematical art through chaos game algorithms",
+      "playTime": "5-15 min",
+      "file": "/games/g01-fractal-flame.html",
+      "featured": true
+    },
+    {
+      "id": "g02",
+      "title": "Pixel Art Editor (Placeholder)",
+      "category": "art",
+      "description": "Coming soon - Feature-complete pixel art editor with advanced drawing tools",
+      "playTime": "TBD",
+      "file": "#",
+      "featured": true
+    },
+    {
+      "id": "m01",
+      "title": "Music Sequencer (Placeholder)",
+      "category": "music",
+      "description": "Coming soon - Compose music with elegant text notation and Web Audio",
+      "playTime": "TBD",
+      "file": "#",
+      "featured": true
+    },
+    {
+      "id": "g03",
+      "title": "2048",
+      "category": "games",
+      "description": "The addictive tile-merging puzzle with smooth animations",
+      "playTime": "5-10 min",
+      "file": "/games/g03-2048.html",
+      "featured": true
+    },
+    {
+      "id": "u01",
+      "title": "Color Palette Generator",
+      "category": "utilities",
+      "description": "Generate harmonious palettes based on color theory",
+      "playTime": "3-5 min",
+      "file": "/games/u01-color-palette.html",
+      "featured": true
+    },
+    {
+      "id": "l01",
+      "title": "Sorting Visualizer",
+      "category": "learning",
+      "description": "Watch sorting algorithms execute step-by-step",
+      "playTime": "5-10 min",
+      "file": "/games/l01-sorting-visualizer.html",
+      "featured": true
+    }
+  ],
+  "more": [
+    {
+      "id": "g04",
+      "title": "Fluid Simulation (Placeholder)",
+      "category": "art",
+      "description": "Coming soon - Interactive fluid dynamics with particle systems",
+      "playTime": "TBD",
+      "file": "#"
+    },
+    {
+      "id": "g05",
+      "title": "Boids Flocking (Placeholder)",
+      "category": "learning",
+      "description": "Coming soon - Emergent behavior from simple steering rules",
+      "playTime": "TBD",
+      "file": "#"
+    },
+    {
+      "id": "g06",
+      "title": "15-Puzzle (Placeholder)",
+      "category": "games",
+      "description": "Coming soon - Classic sliding tile puzzle with move tracking",
+      "playTime": "TBD",
+      "file": "#"
+    },
+    {
+      "id": "u02",
+      "title": "Regex Visualizer (Placeholder)",
+      "category": "utilities",
+      "description": "Coming soon - Transform regex into visual railroad diagrams",
+      "playTime": "TBD",
+      "file": "#"
+    },
+    {
+      "id": "l02",
+      "title": "Pathfinding Demo (Placeholder)",
+      "category": "learning",
+      "description": "Coming soon - Compare A* and Dijkstra in real-time",
+      "playTime": "TBD",
+      "file": "#"
+    },
+    {
+      "id": "g07",
+      "title": "Choose Your Adventure (Placeholder)",
+      "category": "games",
+      "description": "Coming soon - Branching narrative with multiple endings",
+      "playTime": "TBD",
+      "file": "#"
+    }
+  ]
+}

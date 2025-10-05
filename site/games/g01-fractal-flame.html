@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fractal Flame Sketcher</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      --bg: #020617;
+      --fg: #f1f5f9;
+      --accent: #38bdf8;
+      --panel: rgba(15, 23, 42, 0.85);
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: radial-gradient(circle at top, #1e293b 0%, #020617 55%, #01040f 100%);
+      color: var(--fg);
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      grid-template-rows: auto 1fr auto;
+      gap: 16px;
+      padding: 16px;
+    }
+
+    header {
+      grid-column: 1 / -1;
+      background: var(--panel);
+      backdrop-filter: blur(18px);
+      border: 1px solid rgba(148, 163, 184, 0.32);
+      border-radius: 16px;
+      padding: 16px 20px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 24px;
+      box-shadow: 0 20px 60px rgba(8, 47, 73, 0.35);
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 1.5rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    header p {
+      margin: 0;
+      opacity: 0.75;
+      font-size: 0.95rem;
+      max-width: 52ch;
+    }
+
+    header button {
+      appearance: none;
+      background: rgba(56, 189, 248, 0.15);
+      border: 1px solid rgba(56, 189, 248, 0.45);
+      border-radius: 10px;
+      color: var(--fg);
+      font: inherit;
+      padding: 10px 18px;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      cursor: pointer;
+      transition: transform 140ms ease, border-color 140ms ease, box-shadow 140ms ease;
+    }
+
+    header button:hover,
+    header button:focus-visible {
+      transform: translateY(-1px);
+      border-color: #0ea5e9;
+      box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.35);
+    }
+
+    aside {
+      background: var(--panel);
+      border: 1px solid rgba(148, 163, 184, 0.28);
+      border-radius: 16px;
+      padding: 20px;
+      display: grid;
+      gap: 20px;
+      align-content: start;
+      box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.12);
+    }
+
+    aside section {
+      display: grid;
+      gap: 12px;
+    }
+
+    aside h2 {
+      margin: 0;
+      font-size: 0.95rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      opacity: 0.8;
+    }
+
+    label.control {
+      font-size: 0.85rem;
+      display: grid;
+      gap: 6px;
+    }
+
+    label.control span {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-weight: 500;
+      letter-spacing: 0.02em;
+    }
+
+    label.control input,
+    label.control select,
+    button.secondary {
+      appearance: none;
+      background: rgba(12, 20, 39, 0.75);
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      border-radius: 10px;
+      padding: 8px 10px;
+      color: inherit;
+      font: inherit;
+      transition: border-color 140ms ease, box-shadow 140ms ease;
+    }
+
+    label.control input[type="range"] {
+      padding: 0;
+      accent-color: var(--accent);
+    }
+
+    label.control input:focus-visible,
+    label.control select:focus-visible,
+    button.secondary:focus-visible,
+    button.secondary:hover {
+      border-color: #38bdf8;
+      box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.35);
+    }
+
+    button.secondary {
+      cursor: pointer;
+      font-weight: 600;
+      display: inline-flex;
+      justify-content: center;
+      align-items: center;
+      gap: 6px;
+    }
+
+    main {
+      background: var(--panel);
+      border: 1px solid rgba(148, 163, 184, 0.28);
+      border-radius: 16px;
+      position: relative;
+      overflow: hidden;
+      display: grid;
+      place-items: center;
+      box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.12);
+    }
+
+    canvas {
+      width: min(100%, 960px);
+      height: min(100%, 720px);
+      max-width: 960px;
+      max-height: 720px;
+      background: #000814;
+      border-radius: 16px;
+      box-shadow: 0 30px 80px rgba(2, 6, 23, 0.7);
+    }
+
+    footer {
+      grid-column: 1 / -1;
+      background: rgba(12, 20, 39, 0.85);
+      border: 1px solid rgba(148, 163, 184, 0.24);
+      border-radius: 16px;
+      padding: 14px 20px;
+      font-size: 0.85rem;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+    }
+
+    footer span {
+      opacity: 0.75;
+    }
+
+    details summary {
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    @media (max-width: 1080px) {
+      body {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto auto 1fr auto;
+      }
+      aside {
+        order: 2;
+      }
+      main {
+        order: 3;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>Fractal Flame Sketcher</h1>
+      <p>Real-time fractal flame generator using chaos game algorithms</p>
+    </div>
+    <div style="display: flex; gap: 8px;">
+      <button onclick="window.close(); window.location.href='/';" style="background: rgba(148, 163, 184, 0.15); border-color: rgba(148, 163, 184, 0.45);">← Back to Arcade</button>
+      <button id="action-run">Regenerate</button>
+    </div>
+  </header>
+
+  <aside>
+{{ ... }}
+    <section>
+      <h2>Parameters</h2>
+      <label class="control">
+        <span><span>Iterations</span><span id="iterations-value">350k</span></span>
+        <input id="iterations" type="range" min="120000" max="500000" step="10000" value="350000" />
+      </label>
+      <label class="control">
+        <span><span>Symmetry</span><span id="symmetry-value">5</span></span>
+        <input id="symmetry" type="range" min="1" max="8" step="1" value="5" />
+      </label>
+      <label class="control">
+        <span><span>Variation Mix</span><span id="variation-value">0.65</span></span>
+        <input id="variation" type="range" min="0" max="1" step="0.05" value="0.65" />
+      </label>
+      <label class="control">
+        <span><span>Gamma</span><span id="gamma-value">2.2</span></span>
+        <input id="gamma" type="range" min="1" max="3.5" step="0.1" value="2.2" />
+      </label>
+      <label class="control">
+        <span><span>Palette</span></span>
+        <select id="palette">
+          <option value="aurora">Aurora Veil</option>
+          <option value="ember">Molten Ember</option>
+          <option value="tide">Tidal Bloom</option>
+          <option value="violet">Violet Nova</option>
+        </select>
+      </label>
+    </section>
+
+    <section>
+      <h2>Artifacts</h2>
+      <button class="secondary" id="action-export" type="button">Download PNG</button>
+      <button class="secondary" id="action-save" type="button">Save Parameters</button>
+      <button class="secondary" id="action-load" type="button">Load Parameters</button>
+      <input type="file" id="load-input" accept="application/json" hidden />
+    </section>
+
+    <section>
+      <h2>Quick Tips</h2>
+      <details open>
+        <summary>How to use</summary>
+        <ol id="tip-list"></ol>
+      </details>
+    </section>
+  </aside>
+
+  <main>
+    <canvas id="surface" width="960" height="720" aria-label="Fractal flame canvas"></canvas>
+  </main>
+
+  <footer>
+    <span>Built with vanilla HTML, CSS, and JavaScript. Keyboard accessible controls.</span>
+    <span id="status">Ready.</span>
+  </footer>
+
+  <script>
+    const surface = document.querySelector('#surface');
+    const ctx = surface.getContext('2d', { willReadFrequently: true });
+    const status = document.querySelector('#status');
+
+    const controls = {
+      iterations: document.querySelector('#iterations'),
+      symmetry: document.querySelector('#symmetry'),
+      variation: document.querySelector('#variation'),
+      gamma: document.querySelector('#gamma'),
+      palette: document.querySelector('#palette')
+    };
+
+    const controlLabels = {
+      iterations: document.querySelector('#iterations-value'),
+      symmetry: document.querySelector('#symmetry-value'),
+      variation: document.querySelector('#variation-value'),
+      gamma: document.querySelector('#gamma-value')
+    };
+
+    const tipList = document.querySelector('#tip-list');
+    const loadInput = document.querySelector('#load-input');
+
+    const tips = [
+      'Use Iterations to increase detail. Higher counts take longer but reveal depth.',
+      'Symmetry rotates the attractor around the center. Try 3–6 for mandala effects.',
+      'Variation mixes in non-linear transforms like sinus, swirl, and spherical.',
+      'Gamma adjusts brightness falloff. Higher gamma brightens faint wisps.',
+      'Save parameter sets as JSON to recreate favorite flames later.'
+    ];
+
+    function initTips() {
+      tipList.innerHTML = '';
+      tips.forEach(text => {
+        const li = document.createElement('li');
+        li.textContent = text;
+        tipList.appendChild(li);
+      });
+    }
+
+    function downloadBlob({ blob, filename }) {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      requestAnimationFrame(() => {
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      });
+    }
+
+    function downloadJSON(data, filename = 'flame-parameters.json') {
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      downloadBlob({ blob, filename });
+    }
+
+    function downloadPNG(canvas, filename = 'fractal-flame.png') {
+      canvas.toBlob(blob => {
+        if (!blob) {
+          status.textContent = 'Export failed.';
+          return;
+        }
+        downloadBlob({ blob, filename });
+        status.textContent = 'PNG downloaded.';
+      }, 'image/png');
+    }
+
+    function readJSONFile(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onerror = () => reject(reader.error);
+        reader.onload = () => {
+          try {
+            resolve(JSON.parse(reader.result));
+          } catch (error) {
+            reject(error);
+          }
+        };
+        reader.readAsText(file);
+      });
+    }
+
+    const palettes = {
+      aurora: [
+        [9, 12, 34],
+        [29, 78, 137],
+        [56, 189, 248],
+        [186, 230, 253],
+        [236, 254, 255]
+      ],
+      ember: [
+        [16, 8, 3],
+        [125, 29, 27],
+        [220, 38, 38],
+        [249, 115, 22],
+        [253, 224, 71]
+      ],
+      tide: [
+        [4, 26, 36],
+        [13, 148, 136],
+        [45, 212, 191],
+        [129, 255, 229],
+        [224, 255, 255]
+      ],
+      violet: [
+        [24, 10, 34],
+        [109, 40, 217],
+        [196, 181, 253],
+        [244, 114, 182],
+        [253, 244, 255]
+      ]
+    };
+
+    function buildPalette(key, steps = 2048) {
+      const points = palettes[key] ?? palettes.aurora;
+      const gradient = new Array(steps);
+      for (let i = 0; i < steps; i++) {
+        const t = i / (steps - 1);
+        const scaled = t * (points.length - 1);
+        const index = Math.floor(scaled);
+        const localT = scaled - index;
+        const a = points[index];
+        const b = points[Math.min(index + 1, points.length - 1)];
+        const mix = [
+          a[0] + (b[0] - a[0]) * localT,
+          a[1] + (b[1] - a[1]) * localT,
+          a[2] + (b[2] - a[2]) * localT
+        ];
+        gradient[i] = mix;
+      }
+      return gradient;
+    }
+
+    function createTransforms(seed) {
+      const rng = mulberry32(seed);
+      const transforms = [];
+      const affine = () => ({
+        a: rng() * 1.6 - 0.8,
+        b: rng() * 1.6 - 0.8,
+        c: rng() * 1.6 - 0.8,
+        d: rng() * 1.6 - 0.8,
+        e: rng() * 0.6 - 0.3,
+        f: rng() * 0.6 - 0.3
+      });
+
+      for (let i = 0; i < 3; i++) {
+        transforms.push({
+          weight: 0.5 + rng() * 0.5,
+          colorIndex: Math.floor(rng() * 2048),
+          affine: affine(),
+          variation: rng()
+        });
+      }
+
+      transforms.push({
+        weight: 0.8,
+        colorIndex: Math.floor(rng() * 2048),
+        affine: affine(),
+        variation: 1
+      });
+
+      const totalWeight = transforms.reduce((acc, t) => acc + t.weight, 0);
+      transforms.forEach(t => {
+        t.weight /= totalWeight;
+        t.cumulative = 0;
+      });
+
+      let cumulative = 0;
+      for (const t of transforms) {
+        cumulative += t.weight;
+        t.cumulative = cumulative;
+      }
+
+      return transforms;
+    }
+
+    function mulberry32(seed) {
+      return function () {
+        let t = (seed += 0x6d2b79f5);
+        t = Math.imul(t ^ (t >>> 15), t | 1);
+        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+      };
+    }
+
+    function pickTransform(transforms, r) {
+      for (const transform of transforms) {
+        if (r <= transform.cumulative) return transform;
+      }
+      return transforms[transforms.length - 1];
+    }
+
+    const state = {
+      parameters: {
+        iterations: Number(controls.iterations.value),
+        symmetry: Number(controls.symmetry.value),
+        variation: Number(controls.variation.value),
+        gamma: Number(controls.gamma.value),
+        palette: controls.palette.value
+      },
+      seed: crypto.getRandomValues(new Uint32Array(1))[0]
+    };
+
+    Object.keys(controls).forEach(key => {
+      const control = controls[key];
+      control.addEventListener('input', () => {
+        if (controlLabels[key]) {
+          controlLabels[key].textContent = formatControlValue(key, control.value);
+        }
+      });
+      control.addEventListener('change', () => {
+        state.parameters[key] = key === 'palette' ? control.value : Number(control.value);
+        reset();
+      });
+    });
+
+    function formatControlValue(key, value) {
+      if (key === 'iterations') return `${Math.round(value / 1000)}k`;
+      if (key === 'variation') return Number(value).toFixed(2);
+      if (key === 'gamma') return Number(value).toFixed(1);
+      return value;
+    }
+
+    Object.entries(controlLabels).forEach(([key, label]) => {
+      label.textContent = formatControlValue(key, controls[key].value);
+    });
+
+    function render() {
+      const { iterations, symmetry, variation, gamma, palette } = state.parameters;
+      const w = surface.width;
+      const h = surface.height;
+      const imageData = ctx.createImageData(w, h);
+      const buffer = new Float32Array(w * h * 3);
+      const hits = new Float32Array(w * h);
+
+      ctx.fillStyle = '#00010a';
+      ctx.fillRect(0, 0, w, h);
+
+      const lut = buildPalette(palette);
+      const transforms = createTransforms(state.seed);
+      const rng = mulberry32(state.seed ^ 0x9e3779b9);
+
+      let x = 0;
+      let y = 0;
+      const skip = 20;
+      const varyMix = variation;
+
+      const start = performance.now();
+      for (let i = 0; i < iterations; i++) {
+        const t = pickTransform(transforms, rng());
+        const nx = t.affine.a * x + t.affine.b * y + t.affine.e;
+        const ny = t.affine.c * x + t.affine.d * y + t.affine.f;
+
+        x = nx;
+        y = ny;
+
+        let vx = x;
+        let vy = y;
+
+        if (varyMix > 0) {
+          const r2 = vx * vx + vy * vy;
+          const sinx = Math.sin(vx);
+          const cosy = Math.cos(vy);
+          const swirl = {
+            x: vx * Math.sin(r2) - vy * Math.cos(r2),
+            y: vx * Math.cos(r2) + vy * Math.sin(r2)
+          };
+          const spherical = {
+            x: vx / (r2 || 1),
+            y: vy / (r2 || 1)
+          };
+          vx = vx * (1 - varyMix) + (swirl.x * 0.6 + spherical.x * 0.4) * varyMix;
+          vy = vy * (1 - varyMix) + (swirl.y * 0.6 + spherical.y * 0.4) * varyMix;
+          vx += sinx * 0.15 * varyMix;
+          vy += cosy * 0.15 * varyMix;
+        }
+
+        if (i < skip) continue;
+
+        for (let s = 0; s < symmetry; s++) {
+          const angle = (s * Math.PI * 2) / symmetry;
+          const sx = vx * Math.cos(angle) - vy * Math.sin(angle);
+          const sy = vx * Math.sin(angle) + vy * Math.cos(angle);
+
+          const px = Math.floor((sx + 2) / 4 * w);
+          const py = Math.floor((sy + 1.5) / 3 * h);
+          if (px < 0 || px >= w || py < 0 || py >= h) continue;
+          const index = py * w + px;
+          const color = lut[(t.colorIndex + i) % lut.length];
+          buffer[index * 3 + 0] += color[0];
+          buffer[index * 3 + 1] += color[1];
+          buffer[index * 3 + 2] += color[2];
+          hits[index] += 1;
+        }
+      }
+      const mid = performance.now();
+
+      const gammaFactor = 1 / gamma;
+      for (let i = 0; i < hits.length; i++) {
+        const count = hits[i];
+        const offset = i * 3;
+        if (count === 0) continue;
+        const intensity = Math.pow(count, gammaFactor);
+        imageData.data[offset + 0] = Math.min(255, buffer[offset + 0] * intensity / count);
+        imageData.data[offset + 1] = Math.min(255, buffer[offset + 1] * intensity / count);
+        imageData.data[offset + 2] = Math.min(255, buffer[offset + 2] * intensity / count);
+        imageData.data[offset + 3] = Math.min(255, intensity * 255);
+      }
+
+      ctx.putImageData(imageData, 0, 0);
+      const end = performance.now();
+      status.textContent = `Rendered ${iterations.toLocaleString()} iterations with ${symmetry} symmetry in ${(end - start).toFixed(0)}ms (plot ${(mid - start).toFixed(0)}ms, tone ${(end - mid).toFixed(0)}ms).`;
+    }
+
+    function reset() {
+      status.textContent = 'Generating fractal…';
+      requestAnimationFrame(() => {
+        render();
+      });
+    }
+
+    document.querySelector('#action-run').addEventListener('click', () => {
+      state.seed = crypto.getRandomValues(new Uint32Array(1))[0];
+      reset();
+    });
+
+    document.querySelector('#action-export').addEventListener('click', () => {
+      downloadPNG(surface);
+    });
+
+    document.querySelector('#action-save').addEventListener('click', () => {
+      downloadJSON({ parameters: state.parameters, seed: state.seed });
+      status.textContent = 'Parameters saved.';
+    });
+
+    document.querySelector('#action-load').addEventListener('click', () => loadInput.click());
+
+    loadInput.addEventListener('change', async event => {
+      const file = event.target.files?.[0];
+      if (!file) return;
+      try {
+        const data = await readJSONFile(file);
+        if (data.parameters) {
+          Object.assign(state.parameters, data.parameters);
+          controls.iterations.value = state.parameters.iterations;
+          controls.symmetry.value = state.parameters.symmetry;
+          controls.variation.value = state.parameters.variation;
+          controls.gamma.value = state.parameters.gamma;
+          controls.palette.value = state.parameters.palette;
+          Object.entries(controlLabels).forEach(([key, label]) => {
+            label.textContent = formatControlValue(key, controls[key].value);
+          });
+        }
+        if (data.seed) {
+          state.seed = data.seed >>> 0;
+        }
+        status.textContent = 'Parameters loaded. Regenerating…';
+        reset();
+      } catch (error) {
+        status.textContent = `Load failed: ${error.message}`;
+      } finally {
+        loadInput.value = '';
+      }
+    });
+
+    initTips();
+    reset();
+  </script>
+</body>
+</html>
