@@ -11,11 +11,11 @@
     },
     {
       "id": "g02",
-      "title": "Pixel Art Editor (Placeholder)",
+      "title": "Pixel Art Editor",
       "category": "art",
-      "description": "Coming soon - Feature-complete pixel art editor with advanced drawing tools",
-      "playTime": "TBD",
-      "file": "#",
+      "description": "Feature-complete pixel art editor with multiple tools and export",
+      "playTime": "10-30 min",
+      "file": "/games/g02-pixel-editor.html",
       "featured": true
     },
     {

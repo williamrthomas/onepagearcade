@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pixel Art Editor</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      --bg: #020617;
+      --fg: #f1f5f9;
+      --accent: #38bdf8;
+      --panel: rgba(15, 23, 42, 0.85);
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: radial-gradient(circle at top, #1e293b 0%, #020617 55%, #01040f 100%);
+      color: var(--fg);
+      display: grid;
+      grid-template-columns: 280px 1fr 280px;
+      grid-template-rows: auto 1fr auto;
+      gap: 16px;
+      padding: 16px;
+    }
+
+    header {
+      grid-column: 1 / -1;
+      background: var(--panel);
+      backdrop-filter: blur(18px);
+      border: 1px solid rgba(148, 163, 184, 0.32);
+      border-radius: 16px;
+      padding: 16px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 1.5rem;
+    }
+
+    .header-controls {
+      display: flex;
+      gap: 8px;
+    }
+
+    aside {
+      background: var(--panel);
+      border: 1px solid rgba(148, 163, 184, 0.28);
+      border-radius: 16px;
+      padding: 20px;
+      display: grid;
+      gap: 20px;
+      align-content: start;
+    }
+
+    aside h2 {
+      margin: 0;
+      font-size: 0.95rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      opacity: 0.85;
+    }
+
+    button {
+      appearance: none;
+      background: rgba(15, 23, 42, 0.65);
+      border: 1px solid rgba(148, 163, 184, 0.4);
+      border-radius: 8px;
+      padding: 8px 10px;
+      color: inherit;
+      font: inherit;
+      transition: all 150ms ease;
+      background: rgba(56, 189, 248, 0.15);
+      border: 1px solid rgba(56, 189, 248, 0.45);
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    button:hover:not(:disabled) {
+      border-color: #0ea5e9;
+      box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.35);
+    }
+
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    button.active {
+      background: rgba(56, 189, 248, 0.35);
+      border-color: var(--accent);
+    }
+
+    .tool-button {
+      width: 100%;
+      text-align: left;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.9rem;
+    }
+
+    .tool-icon {
+      width: 20px;
+      text-align: center;
+    }
+
+    main {
+      background: var(--panel);
+      border: 1px solid rgba(148, 163, 184, 0.3);
+      border-radius: 16px;
+      padding: 2rem;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+      position: relative;
+    }
+
+    #canvas-container {
+      position: relative;
+      cursor: crosshair;
+      background: repeating-conic-gradient(#1e293b 0% 25%, #0f172a 0% 50%) 50% / 20px 20px;
+      border: 2px solid rgba(148, 163, 184, 0.3);
+      border-radius: 8px;
+    }
+
+    #canvas {
+      display: block;
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+    }
+
+    .color-picker-grid {
+      display: grid;
+      grid-template-columns: repeat(8, 1fr);
+      gap: 4px;
+    }
+
+    .color-swatch {
+      aspect-ratio: 1;
+      border-radius: 6px;
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: all 150ms ease;
+    }
+
+    .color-swatch:hover {
+      transform: scale(1.1);
+    }
+
+    .color-swatch.active {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.3);
+    }
+
+    .color-input-row {
+      display: flex;
+      gap: 8px;
+    }
+
+    input[type="color"] {
+      flex: 1;
+      height: 40px;
+      border: 1px solid rgba(148, 163, 184, 0.4);
+      border-radius: 8px;
+      background: rgba(15, 23, 42, 0.65);
+      cursor: pointer;
+    }
+
+    select, input[type="number"] {
+      appearance: none;
+      background: rgba(15, 23, 42, 0.65);
+      border: 1px solid rgba(148, 163, 184, 0.4);
+      border-radius: 8px;
+      padding: 8px 10px;
+      color: inherit;
+      font: inherit;
+    }
+
+    .size-buttons {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+    }
+
+    .size-btn {
+      padding: 6px;
+      font-size: 0.8rem;
+    }
+
+    footer {
+      grid-column: 1 / -1;
+      background: rgba(15, 23, 42, 0.65);
+      border: 1px solid rgba(148, 163, 184, 0.3);
+      border-radius: 12px;
+      padding: 12px 16px;
+      font-size: 0.85rem;
+      text-align: center;
+      opacity: 0.7;
+    }
+
+    @media (max-width: 1400px) {
+      body { 
+        grid-template-columns: 1fr;
+        grid-template-rows: auto auto 1fr auto auto;
+      }
+      aside:first-of-type { grid-row: 2; }
+      main { grid-row: 3; }
+      aside:last-of-type { grid-row: 4; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>Pixel Art Editor</h1>
+    </div>
+    <div class="header-controls">
+      <button onclick="window.close(); window.location.href='/';" style="background: rgba(148, 163, 184, 0.15); border-color: rgba(148, 163, 184, 0.45);">← Back to Arcade</button>
+      <button id="btn-undo">↶ Undo</button>
+      <button id="btn-redo">↷ Redo</button>
+      <button id="btn-clear">Clear Canvas</button>
+      <button id="btn-export">💾 Export PNG</button>
+    </div>
+  </header>
+
+  <aside>
+    <section>
+      <h2>Tools</h2>
+      <button class="tool-button active" data-tool="pencil">
+        <span class="tool-icon">✏️</span>
+        <span>Pencil</span>
+      </button>
+      <button class="tool-button" data-tool="fill">
+        <span class="tool-icon">🪣</span>
+        <span>Fill Bucket</span>
+      </button>
+      <button class="tool-button" data-tool="eraser">
+        <span class="tool-icon">🧹</span>
+        <span>Eraser</span>
+      </button>
+      <button class="tool-button" data-tool="eyedropper">
+        <span class="tool-icon">💧</span>
+        <span>Eyedropper</span>
+      </button>
+      <button class="tool-button" data-tool="line">
+        <span class="tool-icon">📏</span>
+        <span>Line</span>
+      </button>
+    </section>
+
+    <section>
+      <h2>Canvas Size</h2>
+      <div class="size-buttons">
+        <button class="size-btn" onclick="resizeCanvas(16, 16)">16×16</button>
+        <button class="size-btn active" onclick="resizeCanvas(32, 32)">32×32</button>
+        <button class="size-btn" onclick="resizeCanvas(64, 64)">64×64</button>
+      </div>
+    </section>
+
+    <section>
+      <h2>Zoom</h2>
+      <div class="size-buttons">
+        <button class="size-btn" onclick="setZoom(1)">1×</button>
+        <button class="size-btn" onclick="setZoom(2)">2×</button>
+        <button class="size-btn" onclick="setZoom(4)">4×</button>
+        <button class="size-btn active" onclick="setZoom(8)">8×</button>
+        <button class="size-btn" onclick="setZoom(12)">12×</button>
+        <button class="size-btn" onclick="setZoom(16)">16×</button>
+      </div>
+    </section>
+  </aside>
+
+  <main>
+    <div id="canvas-container">
+      <canvas id="canvas"></canvas>
+    </div>
+  </main>
+
+  <aside>
+    <section>
+      <h2>Colors</h2>
+      <div class="color-picker-grid" id="palette"></div>
+      <div class="color-input-row">
+        <input type="color" id="color-picker" value="#38bdf8">
+        <button onclick="addColorToPalette()">+</button>
+      </div>
+    </section>
+
+    <section>
+      <h2>Current Color</h2>
+      <div style="height: 60px; border-radius: 12px; border: 2px solid rgba(148, 163, 184, 0.4);" id="current-color"></div>
+    </section>
+
+    <section>
+      <h2>Export Settings</h2>
+      <label style="font-size: 0.85rem;">
+        <span>Scale Factor</span>
+        <select id="export-scale">
+          <option value="1">1× (original)</option>
+          <option value="2">2×</option>
+          <option value="4" selected>4×</option>
+          <option value="8">8×</option>
+          <option value="16">16×</option>
+        </select>
+      </label>
+    </section>
+  </aside>
+
+  <footer>
+    Click to draw • Right-click to erase • Drag for continuous drawing
+  </footer>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    
+    let canvasWidth = 32;
+    let canvasHeight = 32;
+    let zoom = 8;
+    let currentTool = 'pencil';
+    let currentColor = '#38bdf8';
+    let isDrawing = false;
+    let lineStart = null;
+    
+    // Pixel data
+    let pixels = [];
+    let history = [];
+    let historyIndex = -1;
+    const MAX_HISTORY = 50;
+    
+    // Default palette
+    let palette = [
+      '#000000', '#1e293b', '#475569', '#94a3b8', '#e2e8f0', '#ffffff',
+      '#ef4444', '#f59e0b', '#eab308', '#84cc16', '#10b981', '#06b6d4',
+      '#3b82f6', '#6366f1', '#8b5cf6', '#d946ef', '#ec4899', '#f43f5e'
+    ];
+
+    function initCanvas() {
+      canvas.width = canvasWidth;
+      canvas.height = canvasHeight;
+      canvas.style.width = (canvasWidth * zoom) + 'px';
+      canvas.style.height = (canvasHeight * zoom) + 'px';
+      
+      pixels = Array(canvasHeight).fill().map(() => 
+        Array(canvasWidth).fill('transparent')
+      );
+      
+      renderCanvas();
+      saveHistory();
+    }
+
+    function renderCanvas() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      for (let y = 0; y < canvasHeight; y++) {
+        for (let x = 0; x < canvasWidth; x++) {
+          if (pixels[y][x] !== 'transparent') {
+            ctx.fillStyle = pixels[y][x];
+            ctx.fillRect(x, y, 1, 1);
+          }
+        }
+      }
+    }
+
+    function getPixelCoords(e) {
+      const rect = canvas.getBoundingClientRect();
+      const x = Math.floor((e.clientX - rect.left) / zoom);
+      const y = Math.floor((e.clientY - rect.top) / zoom);
+      return { x, y };
+    }
+
+    function setPixel(x, y, color) {
+      if (x >= 0 && x < canvasWidth && y >= 0 && y < canvasHeight) {
+        pixels[y][x] = color;
+        ctx.fillStyle = color;
+        ctx.fillRect(x, y, 1, 1);
+      }
+    }
+
+    function getPixel(x, y) {
+      if (x >= 0 && x < canvasWidth && y >= 0 && y < canvasHeight) {
+        return pixels[y][x];
+      }
+      return null;
+    }
+
+    function floodFill(startX, startY, newColor) {
+      const targetColor = getPixel(startX, startY);
+      if (targetColor === newColor) return;
+      
+      const stack = [[startX, startY]];
+      
+      while (stack.length > 0) {
+        const [x, y] = stack.pop();
+        
+        if (x < 0 || x >= canvasWidth || y < 0 || y >= canvasHeight) continue;
+        if (getPixel(x, y) !== targetColor) continue;
+        
+        setPixel(x, y, newColor);
+        
+        stack.push([x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]);
+      }
+    }
+
+    function drawLine(x0, y0, x1, y1, color) {
+      // Bresenham's line algorithm
+      const dx = Math.abs(x1 - x0);
+      const dy = Math.abs(y1 - y0);
+      const sx = x0 < x1 ? 1 : -1;
+      const sy = y0 < y1 ? 1 : -1;
+      let err = dx - dy;
+
+      while (true) {
+        setPixel(x0, y0, color);
+
+        if (x0 === x1 && y0 === y1) break;
+        
+        const e2 = 2 * err;
+        if (e2 > -dy) {
+          err -= dy;
+          x0 += sx;
+        }
+        if (e2 < dx) {
+          err += dx;
+          y0 += sy;
+        }
+      }
+    }
+
+    function saveHistory() {
+      // Remove future history if we're not at the end
+      history = history.slice(0, historyIndex + 1);
+      
+      // Add current state
+      history.push(JSON.parse(JSON.stringify(pixels)));
+      
+      // Limit history size
+      if (history.length > MAX_HISTORY) {
+        history.shift();
+      } else {
+        historyIndex++;
+      }
+      
+      updateUndoRedoButtons();
+    }
+
+    function undo() {
+      if (historyIndex > 0) {
+        historyIndex--;
+        pixels = JSON.parse(JSON.stringify(history[historyIndex]));
+        renderCanvas();
+        updateUndoRedoButtons();
+      }
+    }
+
+    function redo() {
+      if (historyIndex < history.length - 1) {
+        historyIndex++;
+        pixels = JSON.parse(JSON.stringify(history[historyIndex]));
+        renderCanvas();
+        updateUndoRedoButtons();
+      }
+    }
+
+    function updateUndoRedoButtons() {
+      document.getElementById('btn-undo').disabled = historyIndex <= 0;
+      document.getElementById('btn-redo').disabled = historyIndex >= history.length - 1;
+    }
+
+    // Canvas event handlers
+    canvas.addEventListener('mousedown', (e) => {
+      e.preventDefault();
+      isDrawing = true;
+      const { x, y } = getPixelCoords(e);
+      
+      if (currentTool === 'pencil') {
+        setPixel(x, y, e.button === 2 ? 'transparent' : currentColor);
+      } else if (currentTool === 'fill') {
+        floodFill(x, y, e.button === 2 ? 'transparent' : currentColor);
+        saveHistory();
+      } else if (currentTool === 'eraser') {
+        setPixel(x, y, 'transparent');
+      } else if (currentTool === 'eyedropper') {
+        const color = getPixel(x, y);
+        if (color && color !== 'transparent') {
+          setCurrentColor(color);
+        }
+      } else if (currentTool === 'line') {
+        lineStart = { x, y };
+      }
+    });
+
+    canvas.addEventListener('mousemove', (e) => {
+      if (!isDrawing) return;
+      const { x, y } = getPixelCoords(e);
+      
+      if (currentTool === 'pencil') {
+        setPixel(x, y, e.button === 2 ? 'transparent' : currentColor);
+      } else if (currentTool === 'eraser') {
+        setPixel(x, y, 'transparent');
+      }
+    });
+
+    canvas.addEventListener('mouseup', (e) => {
+      if (!isDrawing) return;
+      
+      if (currentTool === 'line' && lineStart) {
+        const { x, y } = getPixelCoords(e);
+        drawLine(lineStart.x, lineStart.y, x, y, currentColor);
+        lineStart = null;
+      }
+      
+      if (currentTool === 'pencil' || currentTool === 'eraser' || currentTool === 'line') {
+        saveHistory();
+      }
+      
+      isDrawing = false;
+    });
+
+    canvas.addEventListener('mouseleave', () => {
+      isDrawing = false;
+      lineStart = null;
+    });
+
+    canvas.addEventListener('contextmenu', (e) => {
+      e.preventDefault();
+    });
+
+    // Tool selection
+    document.querySelectorAll('.tool-button').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.tool-button').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentTool = btn.dataset.tool;
+      });
+    });
+
+    // Color palette
+    function renderPalette() {
+      const paletteEl = document.getElementById('palette');
+      paletteEl.innerHTML = '';
+      
+      palette.forEach((color, i) => {
+        const swatch = document.createElement('div');
+        swatch.className = 'color-swatch';
+        swatch.style.backgroundColor = color;
+        if (color === currentColor) swatch.classList.add('active');
+        swatch.onclick = () => setCurrentColor(color);
+        paletteEl.appendChild(swatch);
+      });
+    }
+
+    function setCurrentColor(color) {
+      currentColor = color;
+      document.getElementById('current-color').style.backgroundColor = color;
+      document.getElementById('color-picker').value = color;
+      renderPalette();
+    }
+
+    function addColorToPalette() {
+      const color = document.getElementById('color-picker').value;
+      if (!palette.includes(color)) {
+        palette.push(color);
+        renderPalette();
+      }
+      setCurrentColor(color);
+    }
+
+    document.getElementById('color-picker').addEventListener('input', (e) => {
+      setCurrentColor(e.target.value);
+    });
+
+    // Canvas operations
+    function resizeCanvas(width, height) {
+      if (confirm('Resizing will clear the canvas. Continue?')) {
+        canvasWidth = width;
+        canvasHeight = height;
+        initCanvas();
+        
+        document.querySelectorAll('.size-btn').forEach(btn => {
+          btn.classList.remove('active');
+          if (btn.textContent === `${width}×${height}`) {
+            btn.classList.add('active');
+          }
+        });
+      }
+    }
+
+    function setZoom(newZoom) {
+      zoom = newZoom;
+      canvas.style.width = (canvasWidth * zoom) + 'px';
+      canvas.style.height = (canvasHeight * zoom) + 'px';
+      
+      document.querySelectorAll('.size-buttons')[1].querySelectorAll('.size-btn').forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.textContent === `${newZoom}×`) {
+          btn.classList.add('active');
+        }
+      });
+    }
+
+    function clearCanvas() {
+      if (confirm('Clear the entire canvas?')) {
+        pixels = Array(canvasHeight).fill().map(() => 
+          Array(canvasWidth).fill('transparent')
+        );
+        renderCanvas();
+        saveHistory();
+      }
+    }
+
+    function exportPNG() {
+      const scale = parseInt(document.getElementById('export-scale').value);
+      
+      // Create export canvas
+      const exportCanvas = document.createElement('canvas');
+      exportCanvas.width = canvasWidth * scale;
+      exportCanvas.height = canvasHeight * scale;
+      const exportCtx = exportCanvas.getContext('2d');
+      
+      // Disable smoothing for crisp pixels
+      exportCtx.imageSmoothingEnabled = false;
+      
+      // Draw scaled up
+      exportCtx.drawImage(canvas, 0, 0, canvasWidth, canvasHeight, 
+                          0, 0, canvasWidth * scale, canvasHeight * scale);
+      
+      // Download
+      exportCanvas.toBlob(blob => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `pixel-art-${Date.now()}.png`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      });
+    }
+
+    // Button events
+    document.getElementById('btn-undo').addEventListener('click', undo);
+    document.getElementById('btn-redo').addEventListener('click', redo);
+    document.getElementById('btn-clear').addEventListener('click', clearCanvas);
+    document.getElementById('btn-export').addEventListener('click', exportPNG);
+
+    // Keyboard shortcuts
+    document.addEventListener('keydown', (e) => {
+      if (e.ctrlKey || e.metaKey) {
+        if (e.key === 'z' && !e.shiftKey) {
+          e.preventDefault();
+          undo();
+        } else if (e.key === 'z' && e.shiftKey || e.key === 'y') {
+          e.preventDefault();
+          redo();
+        }
+      }
+    });
+
+    // Initialize
+    initCanvas();
+    renderPalette();
+    setCurrentColor(currentColor);
+    updateUndoRedoButtons();
+  </script>
+</body>
+</html>
