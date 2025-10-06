@@ -90,11 +90,11 @@
     },
     {
       "id": "l02",
-      "title": "Pathfinding Demo (Placeholder)",
+      "title": "Pathfinding Visualizer",
       "category": "learning",
-      "description": "Coming soon - Compare A* and Dijkstra in real-time",
-      "playTime": "TBD",
-      "file": "#"
+      "description": "Compare A*, Dijkstra, BFS, and Greedy Best-First in real-time",
+      "playTime": "5-15 min",
+      "file": "/games/l02-pathfinding.html"
     },
     {
       "id": "g07",

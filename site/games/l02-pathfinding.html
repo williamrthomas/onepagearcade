@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pathfinding Visualizer</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      --bg: #020617;
+      --fg: #f1f5f9;
+      --accent: #38bdf8;
+      --panel: rgba(15, 23, 42, 0.85);
+      --start: #10b981;
+      --end: #ef4444;
+      --wall: #1e293b;
+      --path: #fbbf24;
+      --visited: #6366f1;
+      --frontier: #8b5cf6;
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: radial-gradient(circle at top, #1e293b 0%, #020617 55%, #01040f 100%);
+      color: var(--fg);
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      grid-template-rows: auto 1fr auto;
+      gap: 16px;
+      padding: 16px;
+    }
+
+    header {
+      grid-column: 1 / -1;
+      background: var(--panel);
+      backdrop-filter: blur(18px);
+      border: 1px solid rgba(148, 163, 184, 0.32);
+      border-radius: 16px;
+      padding: 16px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 1.5rem;
+    }
+
+    .header-controls {
+      display: flex;
+      gap: 8px;
+    }
+
+    aside {
+      background: var(--panel);
+      border: 1px solid rgba(148, 163, 184, 0.28);
+      border-radius: 16px;
+      padding: 20px;
+      display: grid;
+      gap: 20px;
+      align-content: start;
+      max-height: calc(100vh - 200px);
+      overflow-y: auto;
+    }
+
+    aside h2 {
+      margin: 0;
+      font-size: 0.95rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      opacity: 0.85;
+    }
+
+    label {
+      font-size: 0.85rem;
+      display: grid;
+      gap: 6px;
+    }
+
+    .control-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .control-value {
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    input[type="range"],
+    select,
+    button {
+      appearance: none;
+      background: rgba(15, 23, 42, 0.65);
+      border: 1px solid rgba(148, 163, 184, 0.4);
+      border-radius: 8px;
+      padding: 8px 10px;
+      color: inherit;
+      font: inherit;
+      transition: all 150ms ease;
+    }
+
+    button {
+      background: rgba(56, 189, 248, 0.15);
+      border: 1px solid rgba(56, 189, 248, 0.45);
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    button:hover:not(:disabled) {
+      border-color: #0ea5e9;
+      box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.35);
+    }
+
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    button.running {
+      background: rgba(16, 185, 129, 0.25);
+      border-color: #10b981;
+    }
+
+    main {
+      background: var(--panel);
+      border: 1px solid rgba(148, 163, 184, 0.3);
+      border-radius: 16px;
+      padding: 2rem;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+    }
+
+    #grid-container {
+      display: inline-grid;
+      gap: 1px;
+      background: #0f172a;
+      padding: 1px;
+      border-radius: 8px;
+    }
+
+    .cell {
+      width: 25px;
+      height: 25px;
+      background: #020617;
+      cursor: pointer;
+      transition: all 100ms ease;
+      border: 1px solid rgba(148, 163, 184, 0.1);
+    }
+
+    .cell.wall { background: var(--wall); border-color: var(--wall); }
+    .cell.start { background: var(--start); border-color: var(--start); }
+    .cell.end { background: var(--end); border-color: var(--end); }
+    .cell.visited { background: var(--visited); opacity: 0.4; }
+    .cell.frontier { background: var(--frontier); opacity: 0.6; }
+    .cell.path { background: var(--path); }
+
+    .cell:hover { transform: scale(1.1); }
+
+    .stats {
+      display: grid;
+      gap: 8px;
+      padding: 12px;
+      background: rgba(56, 189, 248, 0.1);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      border-radius: 8px;
+      font-size: 0.8rem;
+    }
+
+    .stat-row {
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .stat-label {
+      opacity: 0.8;
+    }
+
+    .stat-value {
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    .legend {
+      display: grid;
+      gap: 8px;
+      font-size: 0.75rem;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .legend-color {
+      width: 20px;
+      height: 12px;
+      border-radius: 4px;
+    }
+
+    footer {
+      grid-column: 1 / -1;
+      background: rgba(15, 23, 42, 0.65);
+      border: 1px solid rgba(148, 163, 184, 0.3);
+      border-radius: 12px;
+      padding: 12px 16px;
+      font-size: 0.85rem;
+      text-align: center;
+      opacity: 0.7;
+    }
+
+    @media (max-width: 1024px) {
+      body { grid-template-columns: 1fr; }
+      aside { max-height: none; }
+      .cell { width: 20px; height: 20px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>Pathfinding Visualizer</h1>
+    </div>
+    <div class="header-controls">
+      <button onclick="window.close(); window.location.href='/';" style="background: rgba(148, 163, 184, 0.15); border-color: rgba(148, 163, 184, 0.45);">← Back to Arcade</button>
+      <button id="btn-visualize">▶ Visualize</button>
+      <button id="btn-clear-path">Clear Path</button>
+      <button id="btn-clear-walls">Clear Walls</button>
+    </div>
+  </header>
+
+  <aside>
+    <section>
+      <h2>Algorithm</h2>
+      <select id="algorithm">
+        <option value="astar">A* Search</option>
+        <option value="dijkstra">Dijkstra</option>
+        <option value="bfs">Breadth-First Search</option>
+        <option value="greedy">Greedy Best-First</option>
+      </select>
+    </section>
+
+    <section>
+      <h2>Speed</h2>
+      <label>
+        <div class="control-header">
+          <span id="speed-label">Medium</span>
+        </div>
+        <input type="range" id="speed" min="1" max="100" value="50">
+      </label>
+    </section>
+
+    <section>
+      <h2>Maze Generation</h2>
+      <button id="btn-random-walls">Random Walls</button>
+      <button id="btn-recursive-maze">Recursive Division</button>
+    </section>
+
+    <section>
+      <h2>Statistics</h2>
+      <div class="stats">
+        <div class="stat-row">
+          <span class="stat-label">Nodes Visited:</span>
+          <span class="stat-value" id="stat-visited">0</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Path Length:</span>
+          <span class="stat-value" id="stat-path">0</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Time:</span>
+          <span class="stat-value" id="stat-time">0ms</span>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Legend</h2>
+      <div class="legend">
+        <div class="legend-item">
+          <div class="legend-color" style="background: var(--start)"></div>
+          Start Node
+        </div>
+        <div class="legend-item">
+          <div class="legend-color" style="background: var(--end)"></div>
+          End Node
+        </div>
+        <div class="legend-item">
+          <div class="legend-color" style="background: var(--wall)"></div>
+          Wall
+        </div>
+        <div class="legend-item">
+          <div class="legend-color" style="background: var(--visited); opacity: 0.4;"></div>
+          Visited
+        </div>
+        <div class="legend-item">
+          <div class="legend-color" style="background: var(--path)"></div>
+          Shortest Path
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Instructions</h2>
+      <ul style="margin: 0; padding-left: 1.25rem; font-size: 0.85rem; opacity: 0.8; line-height: 1.6;">
+        <li>Click to draw walls</li>
+        <li>Drag start/end nodes</li>
+        <li>Choose algorithm</li>
+        <li>Press Visualize</li>
+      </ul>
+    </section>
+  </aside>
+
+  <main>
+    <div id="grid-container"></div>
+  </main>
+
+  <footer>
+    Click and drag to draw walls • Watch algorithms find the shortest path
+  </footer>
+
+  <script>
+    const ROWS = 25;
+    const COLS = 35;
+    let grid = [];
+    let startNode = { row: 12, col: 5 };
+    let endNode = { row: 12, col: 30 };
+    let isMouseDown = false;
+    let isDraggingStart = false;
+    let isDraggingEnd = false;
+    let isRunning = false;
+
+    // Initialize grid
+    function initGrid() {
+      const container = document.getElementById('grid-container');
+      container.style.gridTemplateColumns = `repeat(${COLS}, 25px)`;
+      container.innerHTML = '';
+      grid = [];
+
+      for (let row = 0; row < ROWS; row++) {
+        grid[row] = [];
+        for (let col = 0; col < COLS; col++) {
+          const cell = document.createElement('div');
+          cell.className = 'cell';
+          cell.dataset.row = row;
+          cell.dataset.col = col;
+          
+          if (row === startNode.row && col === startNode.col) {
+            cell.classList.add('start');
+          } else if (row === endNode.row && col === endNode.col) {
+            cell.classList.add('end');
+          }
+
+          cell.addEventListener('mousedown', handleMouseDown);
+          cell.addEventListener('mouseenter', handleMouseEnter);
+          cell.addEventListener('mouseup', handleMouseUp);
+          
+          container.appendChild(cell);
+          grid[row][col] = {
+            row,
+            col,
+            isWall: false,
+            isVisited: false,
+            distance: Infinity,
+            heuristic: 0,
+            previous: null,
+            f: Infinity
+          };
+        }
+      }
+    }
+
+    function handleMouseDown(e) {
+      if (isRunning) return;
+      const row = parseInt(e.target.dataset.row);
+      const col = parseInt(e.target.dataset.col);
+      
+      if (row === startNode.row && col === startNode.col) {
+        isDraggingStart = true;
+      } else if (row === endNode.row && col === endNode.col) {
+        isDraggingEnd = true;
+      } else {
+        isMouseDown = true;
+        toggleWall(row, col);
+      }
+    }
+
+    function handleMouseEnter(e) {
+      if (isRunning) return;
+      const row = parseInt(e.target.dataset.row);
+      const col = parseInt(e.target.dataset.col);
+      
+      if (isDraggingStart) {
+        moveStartNode(row, col);
+      } else if (isDraggingEnd) {
+        moveEndNode(row, col);
+      } else if (isMouseDown) {
+        toggleWall(row, col);
+      }
+    }
+
+    function handleMouseUp() {
+      isMouseDown = false;
+      isDraggingStart = false;
+      isDraggingEnd = false;
+    }
+
+    function toggleWall(row, col) {
+      if ((row === startNode.row && col === startNode.col) ||
+          (row === endNode.row && col === endNode.col)) return;
+      
+      const node = grid[row][col];
+      node.isWall = !node.isWall;
+      const cell = document.querySelector(`[data-row="${row}"][data-col="${col}"]`);
+      cell.classList.toggle('wall', node.isWall);
+    }
+
+    function moveStartNode(row, col) {
+      if (grid[row][col].isWall || (row === endNode.row && col === endNode.col)) return;
+      
+      const oldCell = document.querySelector(`[data-row="${startNode.row}"][data-col="${startNode.col}"]`);
+      oldCell.classList.remove('start');
+      
+      startNode = { row, col };
+      const newCell = document.querySelector(`[data-row="${row}"][data-col="${col}"]`);
+      newCell.classList.add('start');
+    }
+
+    function moveEndNode(row, col) {
+      if (grid[row][col].isWall || (row === startNode.row && col === startNode.col)) return;
+      
+      const oldCell = document.querySelector(`[data-row="${endNode.row}"][data-col="${endNode.col}"]`);
+      oldCell.classList.remove('end');
+      
+      endNode = { row, col };
+      const newCell = document.querySelector(`[data-row="${row}"][data-col="${col}"]`);
+      newCell.classList.add('end');
+    }
+
+    // Pathfinding algorithms
+    function heuristic(node) {
+      return Math.abs(node.row - endNode.row) + Math.abs(node.col - endNode.col);
+    }
+
+    function getNeighbors(node) {
+      const neighbors = [];
+      const { row, col } = node;
+      
+      if (row > 0) neighbors.push(grid[row - 1][col]);
+      if (row < ROWS - 1) neighbors.push(grid[row + 1][col]);
+      if (col > 0) neighbors.push(grid[row][col - 1]);
+      if (col < COLS - 1) neighbors.push(grid[row][col + 1]);
+      
+      return neighbors.filter(n => !n.isWall);
+    }
+
+    async function visualizeAlgorithm() {
+      if (isRunning) return;
+      
+      clearPath();
+      const algorithm = document.getElementById('algorithm').value;
+      const speed = 101 - parseInt(document.getElementById('speed').value);
+      
+      isRunning = true;
+      document.getElementById('btn-visualize').classList.add('running');
+      document.getElementById('btn-visualize').disabled = true;
+      
+      const startTime = Date.now();
+      let visitedNodes = [];
+      let path = [];
+
+      switch(algorithm) {
+        case 'astar':
+          ({ visitedNodes, path } = await astar(speed));
+          break;
+        case 'dijkstra':
+          ({ visitedNodes, path } = await dijkstra(speed));
+          break;
+        case 'bfs':
+          ({ visitedNodes, path } = await bfs(speed));
+          break;
+        case 'greedy':
+          ({ visitedNodes, path } = await greedy(speed));
+          break;
+      }
+
+      // Update stats
+      document.getElementById('stat-visited').textContent = visitedNodes.length;
+      document.getElementById('stat-path').textContent = path.length;
+      document.getElementById('stat-time').textContent = (Date.now() - startTime) + 'ms';
+      
+      isRunning = false;
+      document.getElementById('btn-visualize').classList.remove('running');
+      document.getElementById('btn-visualize').disabled = false;
+    }
+
+    async function astar(speed) {
+      const start = grid[startNode.row][startNode.col];
+      const end = grid[endNode.row][endNode.col];
+      const visitedNodes = [];
+      const openSet = [start];
+      
+      start.distance = 0;
+      start.heuristic = heuristic(start);
+      start.f = start.heuristic;
+
+      while (openSet.length > 0) {
+        openSet.sort((a, b) => a.f - b.f);
+        const current = openSet.shift();
+        
+        if (current.isVisited) continue;
+        
+        current.isVisited = true;
+        visitedNodes.push(current);
+        
+        const cell = document.querySelector(`[data-row="${current.row}"][data-col="${current.col}"]`);
+        if (!cell.classList.contains('start') && !cell.classList.contains('end')) {
+          cell.classList.add('visited');
+        }
+        await sleep(speed);
+        
+        if (current === end) {
+          return { visitedNodes, path: reconstructPath(end) };
+        }
+        
+        for (const neighbor of getNeighbors(current)) {
+          const tentativeG = current.distance + 1;
+          
+          if (tentativeG < neighbor.distance) {
+            neighbor.previous = current;
+            neighbor.distance = tentativeG;
+            neighbor.heuristic = heuristic(neighbor);
+            neighbor.f = neighbor.distance + neighbor.heuristic;
+            
+            if (!openSet.includes(neighbor)) {
+              openSet.push(neighbor);
+            }
+          }
+        }
+      }
+      
+      return { visitedNodes, path: [] };
+    }
+
+    async function dijkstra(speed) {
+      const start = grid[startNode.row][startNode.col];
+      const end = grid[endNode.row][endNode.col];
+      const visitedNodes = [];
+      const unvisited = [];
+      
+      start.distance = 0;
+      
+      for (let row of grid) {
+        for (let node of row) {
+          unvisited.push(node);
+        }
+      }
+
+      while (unvisited.length > 0) {
+        unvisited.sort((a, b) => a.distance - b.distance);
+        const current = unvisited.shift();
+        
+        if (current.isWall) continue;
+        if (current.distance === Infinity) break;
+        
+        current.isVisited = true;
+        visitedNodes.push(current);
+        
+        const cell = document.querySelector(`[data-row="${current.row}"][data-col="${current.col}"]`);
+        if (!cell.classList.contains('start') && !cell.classList.contains('end')) {
+          cell.classList.add('visited');
+        }
+        await sleep(speed);
+        
+        if (current === end) {
+          return { visitedNodes, path: reconstructPath(end) };
+        }
+        
+        for (const neighbor of getNeighbors(current)) {
+          const tentativeDistance = current.distance + 1;
+          if (tentativeDistance < neighbor.distance) {
+            neighbor.distance = tentativeDistance;
+            neighbor.previous = current;
+          }
+        }
+      }
+      
+      return { visitedNodes, path: [] };
+    }
+
+    async function bfs(speed) {
+      const start = grid[startNode.row][startNode.col];
+      const end = grid[endNode.row][endNode.col];
+      const visitedNodes = [];
+      const queue = [start];
+      start.isVisited = true;
+
+      while (queue.length > 0) {
+        const current = queue.shift();
+        visitedNodes.push(current);
+        
+        const cell = document.querySelector(`[data-row="${current.row}"][data-col="${current.col}"]`);
+        if (!cell.classList.contains('start') && !cell.classList.contains('end')) {
+          cell.classList.add('visited');
+        }
+        await sleep(speed);
+        
+        if (current === end) {
+          return { visitedNodes, path: reconstructPath(end) };
+        }
+        
+        for (const neighbor of getNeighbors(current)) {
+          if (!neighbor.isVisited) {
+            neighbor.isVisited = true;
+            neighbor.previous = current;
+            queue.push(neighbor);
+          }
+        }
+      }
+      
+      return { visitedNodes, path: [] };
+    }
+
+    async function greedy(speed) {
+      const start = grid[startNode.row][startNode.col];
+      const end = grid[endNode.row][endNode.col];
+      const visitedNodes = [];
+      const openSet = [start];
+      
+      start.heuristic = heuristic(start);
+
+      while (openSet.length > 0) {
+        openSet.sort((a, b) => a.heuristic - b.heuristic);
+        const current = openSet.shift();
+        
+        if (current.isVisited) continue;
+        
+        current.isVisited = true;
+        visitedNodes.push(current);
+        
+        const cell = document.querySelector(`[data-row="${current.row}"][data-col="${current.col}"]`);
+        if (!cell.classList.contains('start') && !cell.classList.contains('end')) {
+          cell.classList.add('visited');
+        }
+        await sleep(speed);
+        
+        if (current === end) {
+          return { visitedNodes, path: reconstructPath(end) };
+        }
+        
+        for (const neighbor of getNeighbors(current)) {
+          if (!neighbor.isVisited) {
+            neighbor.previous = current;
+            neighbor.heuristic = heuristic(neighbor);
+            openSet.push(neighbor);
+          }
+        }
+      }
+      
+      return { visitedNodes, path: [] };
+    }
+
+    function reconstructPath(end) {
+      const path = [];
+      let current = end;
+      
+      while (current !== null) {
+        path.unshift(current);
+        current = current.previous;
+      }
+      
+      // Animate path
+      for (let i = 1; i < path.length - 1; i++) {
+        setTimeout(() => {
+          const node = path[i];
+          const cell = document.querySelector(`[data-row="${node.row}"][data-col="${node.col}"]`);
+          cell.classList.add('path');
+        }, i * 50);
+      }
+      
+      return path;
+    }
+
+    function clearPath() {
+      for (let row of grid) {
+        for (let node of row) {
+          node.isVisited = false;
+          node.distance = Infinity;
+          node.heuristic = 0;
+          node.previous = null;
+          node.f = Infinity;
+        }
+      }
+      
+      document.querySelectorAll('.visited, .path, .frontier').forEach(cell => {
+        cell.classList.remove('visited', 'path', 'frontier');
+      });
+      
+      document.getElementById('stat-visited').textContent = '0';
+      document.getElementById('stat-path').textContent = '0';
+      document.getElementById('stat-time').textContent = '0ms';
+    }
+
+    function clearWalls() {
+      for (let row of grid) {
+        for (let node of row) {
+          node.isWall = false;
+        }
+      }
+      
+      document.querySelectorAll('.wall').forEach(cell => {
+        cell.classList.remove('wall');
+      });
+    }
+
+    function generateRandomWalls() {
+      clearWalls();
+      for (let row of grid) {
+        for (let node of row) {
+          if ((node.row === startNode.row && node.col === startNode.col) ||
+              (node.row === endNode.row && node.col === endNode.col)) continue;
+          
+          if (Math.random() < 0.3) {
+            node.isWall = true;
+            const cell = document.querySelector(`[data-row="${node.row}"][data-col="${node.col}"]`);
+            cell.classList.add('wall');
+          }
+        }
+      }
+    }
+
+    function generateRecursiveMaze() {
+      clearWalls();
+      
+      function divide(minX, maxX, minY, maxY, horizontal) {
+        if (maxX - minX < 2 || maxY - minY < 2) return;
+        
+        if (horizontal) {
+          const y = Math.floor(Math.random() * (maxY - minY - 1)) + minY + 1;
+          const gap = Math.floor(Math.random() * (maxX - minX)) + minX;
+          
+          for (let x = minX; x <= maxX; x++) {
+            if (x !== gap && 
+                !(x === startNode.col && y === startNode.row) &&
+                !(x === endNode.col && y === endNode.row)) {
+              grid[y][x].isWall = true;
+              const cell = document.querySelector(`[data-row="${y}"][data-col="${x}"]`);
+              cell.classList.add('wall');
+            }
+          }
+          
+          divide(minX, maxX, minY, y - 1, !horizontal);
+          divide(minX, maxX, y + 1, maxY, !horizontal);
+        } else {
+          const x = Math.floor(Math.random() * (maxX - minX - 1)) + minX + 1;
+          const gap = Math.floor(Math.random() * (maxY - minY)) + minY;
+          
+          for (let y = minY; y <= maxY; y++) {
+            if (y !== gap &&
+                !(x === startNode.col && y === startNode.row) &&
+                !(x === endNode.col && y === endNode.row)) {
+              grid[y][x].isWall = true;
+              const cell = document.querySelector(`[data-row="${y}"][data-col="${x}"]`);
+              cell.classList.add('wall');
+            }
+          }
+          
+          divide(minX, x - 1, minY, maxY, !horizontal);
+          divide(x + 1, maxX, minY, maxY, !horizontal);
+        }
+      }
+      
+      divide(0, COLS - 1, 0, ROWS - 1, Math.random() < 0.5);
+    }
+
+    function sleep(ms) {
+      return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    // Event listeners
+    document.addEventListener('mouseup', handleMouseUp);
+    document.getElementById('btn-visualize').addEventListener('click', visualizeAlgorithm);
+    document.getElementById('btn-clear-path').addEventListener('click', clearPath);
+    document.getElementById('btn-clear-walls').addEventListener('click', clearWalls);
+    document.getElementById('btn-random-walls').addEventListener('click', generateRandomWalls);
+    document.getElementById('btn-recursive-maze').addEventListener('click', generateRecursiveMaze);
+
+    document.getElementById('speed').addEventListener('input', (e) => {
+      const val = parseInt(e.target.value);
+      const label = val < 33 ? 'Slow' : val < 66 ? 'Medium' : 'Fast';
+      document.getElementById('speed-label').textContent = label;
+    });
+
+    // Initialize
+    initGrid();
+  </script>
+</body>
+</html>
