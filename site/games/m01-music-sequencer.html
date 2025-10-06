@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Step Sequencer</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      --bg: #020617;
+      --fg: #f1f5f9;
+      --accent: #38bdf8;
+      --panel: rgba(15, 23, 42, 0.85);
+      --kick: #ef4444;
+      --snare: #f59e0b;
+      --hihat: #10b981;
+      --bass: #8b5cf6;
+      --lead: #ec4899;
+      --chord: #3b82f6;
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: radial-gradient(circle at top, #1e293b 0%, #020617 55%, #01040f 100%);
+      color: var(--fg);
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      grid-template-rows: auto 1fr auto;
+      gap: 16px;
+      padding: 16px;
+    }
+
+    header {
+      grid-column: 1 / -1;
+      background: var(--panel);
+      backdrop-filter: blur(18px);
+      border: 1px solid rgba(148, 163, 184, 0.32);
+      border-radius: 16px;
+      padding: 16px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 1.5rem;
+    }
+
+    .header-controls {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    aside {
+      background: var(--panel);
+      border: 1px solid rgba(148, 163, 184, 0.28);
+      border-radius: 16px;
+      padding: 20px;
+      display: grid;
+      gap: 20px;
+      align-content: start;
+    }
+
+    aside h2 {
+      margin: 0;
+      font-size: 0.95rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      opacity: 0.85;
+    }
+
+    label {
+      font-size: 0.85rem;
+      display: grid;
+      gap: 6px;
+    }
+
+    input[type="range"],
+    input[type="number"],
+    select,
+    button {
+      appearance: none;
+      background: rgba(15, 23, 42, 0.65);
+      border: 1px solid rgba(148, 163, 184, 0.4);
+      border-radius: 8px;
+      padding: 8px 10px;
+      color: inherit;
+      font: inherit;
+      transition: all 150ms ease;
+    }
+
+    button {
+      background: rgba(56, 189, 248, 0.15);
+      border: 1px solid rgba(56, 189, 248, 0.45);
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    button:hover:not(:disabled) {
+      border-color: #0ea5e9;
+      box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.35);
+    }
+
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    button.playing {
+      background: rgba(16, 185, 129, 0.25);
+      border-color: #10b981;
+    }
+
+    main {
+      background: var(--panel);
+      border: 1px solid rgba(148, 163, 184, 0.3);
+      border-radius: 16px;
+      padding: 2rem;
+      overflow-y: auto;
+    }
+
+    .sequencer-grid {
+      display: grid;
+      gap: 16px;
+    }
+
+    .track {
+      display: grid;
+      gap: 8px;
+    }
+
+    .track-header {
+      display: grid;
+      grid-template-columns: 100px 1fr auto;
+      gap: 12px;
+      align-items: center;
+      padding: 8px 12px;
+      background: rgba(15, 23, 42, 0.5);
+      border-radius: 8px;
+      border-left: 4px solid;
+    }
+
+    .track-header[data-track="kick"] { border-color: var(--kick); }
+    .track-header[data-track="snare"] { border-color: var(--snare); }
+    .track-header[data-track="hihat"] { border-color: var(--hihat); }
+    .track-header[data-track="bass"] { border-color: var(--bass); }
+
+    .track-name {
+      font-weight: 600;
+      text-transform: uppercase;
+      font-size: 0.85rem;
+      letter-spacing: 0.05em;
+    }
+
+    .track-mute {
+      background: rgba(148, 163, 184, 0.15);
+      border-color: rgba(148, 163, 184, 0.4);
+      padding: 4px 12px;
+      font-size: 0.75rem;
+    }
+
+    .track-mute.muted {
+      background: rgba(239, 68, 68, 0.2);
+      border-color: #ef4444;
+    }
+
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(16, 1fr);
+      gap: 4px;
+    }
+
+    .step {
+      aspect-ratio: 1;
+      background: rgba(15, 23, 42, 0.8);
+      border: 2px solid rgba(148, 163, 184, 0.3);
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 100ms ease;
+      position: relative;
+    }
+
+    .step:hover {
+      border-color: var(--accent);
+      transform: scale(1.05);
+    }
+
+    .step.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      box-shadow: 0 0 12px rgba(56, 189, 248, 0.5);
+    }
+
+    .step.playing {
+      box-shadow: 0 0 16px rgba(255, 255, 255, 0.8), inset 0 0 8px rgba(255, 255, 255, 0.5);
+    }
+
+    .step.beat-4 {
+      border-color: rgba(56, 189, 248, 0.5);
+    }
+
+    .track[data-track="kick"] .step.active { background: var(--kick); border-color: var(--kick); }
+    .track[data-track="snare"] .step.active { background: var(--snare); border-color: var(--snare); }
+    .track[data-track="hihat"] .step.active { background: var(--hihat); border-color: var(--hihat); }
+    .track[data-track="bass"] .step.active { background: var(--bass); border-color: var(--bass); }
+
+    .tempo-display {
+      display: flex;
+      align-items: baseline;
+      gap: 4px;
+    }
+
+    .tempo-value {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    .tempo-unit {
+      font-size: 0.75rem;
+      opacity: 0.7;
+    }
+
+    footer {
+      grid-column: 1 / -1;
+      background: rgba(15, 23, 42, 0.65);
+      border: 1px solid rgba(148, 163, 184, 0.3);
+      border-radius: 12px;
+      padding: 12px 16px;
+      font-size: 0.85rem;
+      text-align: center;
+      opacity: 0.7;
+    }
+
+    @media (max-width: 1024px) {
+      body { grid-template-columns: 1fr; }
+      .steps { grid-template-columns: repeat(8, 1fr); }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>Step Sequencer</h1>
+    </div>
+    <div class="header-controls">
+      <button onclick="window.close(); window.location.href='/';" style="background: rgba(148, 163, 184, 0.15); border-color: rgba(148, 163, 184, 0.45);">← Back to Arcade</button>
+      <button id="btn-play" style="font-size: 1.25rem; padding: 8px 20px;">▶</button>
+      <button id="btn-stop">⏹ Stop</button>
+      <button id="btn-clear">Clear</button>
+    </div>
+  </header>
+
+  <aside>
+    <section>
+      <h2>Tempo</h2>
+      <div class="tempo-display">
+        <span class="tempo-value" id="tempo-display">120</span>
+        <span class="tempo-unit">BPM</span>
+      </div>
+      <label>
+        <input type="range" id="tempo" min="60" max="200" value="120">
+      </label>
+    </section>
+
+    <section>
+      <h2>Swing</h2>
+      <label>
+        <span id="swing-label">0%</span>
+        <input type="range" id="swing" min="0" max="100" value="0">
+      </label>
+    </section>
+
+    <section>
+      <h2>Patterns</h2>
+      <button id="btn-save">💾 Save Pattern</button>
+      <button id="btn-load">📂 Load Pattern</button>
+      <button id="btn-random">🎲 Randomize</button>
+      <input type="file" id="load-input" accept="application/json" hidden />
+    </section>
+
+    <section>
+      <h2>Tips</h2>
+      <ul style="margin: 0; padding-left: 1.25rem; font-size: 0.85rem; opacity: 0.8; line-height: 1.6;">
+        <li>Click steps to add/remove notes</li>
+        <li>Mute tracks individually</li>
+        <li>Adjust tempo and swing feel</li>
+        <li>Save patterns as JSON</li>
+      </ul>
+    </section>
+  </aside>
+
+  <main>
+    <div class="sequencer-grid" id="sequencer"></div>
+  </main>
+
+  <footer>
+    Built with Web Audio API • Click steps to compose
+  </footer>
+
+  <script>
+    // Audio Context
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    
+    // Pattern state
+    const pattern = {
+      kick: Array(16).fill(false),
+      snare: Array(16).fill(false),
+      hihat: Array(16).fill(false),
+      bass: Array(16).fill(false)
+    };
+
+    const muted = {
+      kick: false,
+      snare: false,
+      hihat: false,
+      bass: false
+    };
+
+    // Playback state
+    let playing = false;
+    let currentStep = 0;
+    let tempo = 120;
+    let swing = 0;
+    let intervalId = null;
+
+    // Note frequencies for bass
+    const bassNotes = [
+      130.81, 146.83, 164.81, 174.61, // C3, D3, E3, F3
+      196.00, 220.00, 246.94, 261.63  // G3, A3, B3, C4
+    ];
+
+    // Synthesizer functions
+    function playKick(time = audioCtx.currentTime) {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      
+      osc.frequency.setValueAtTime(150, time);
+      osc.frequency.exponentialRampToValueAtTime(0.01, time + 0.5);
+      
+      gain.gain.setValueAtTime(1, time);
+      gain.gain.exponentialRampToValueAtTime(0.01, time + 0.5);
+      
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      
+      osc.start(time);
+      osc.stop(time + 0.5);
+    }
+
+    function playSnare(time = audioCtx.currentTime) {
+      const noise = audioCtx.createBufferSource();
+      const buffer = audioCtx.createBuffer(1, audioCtx.sampleRate * 0.2, audioCtx.sampleRate);
+      const data = buffer.getChannelData(0);
+      
+      for (let i = 0; i < buffer.length; i++) {
+        data[i] = Math.random() * 2 - 1;
+      }
+      
+      noise.buffer = buffer;
+      
+      const filter = audioCtx.createBiquadFilter();
+      filter.type = 'highpass';
+      filter.frequency.value = 1000;
+      
+      const gain = audioCtx.createGain();
+      gain.gain.setValueAtTime(0.6, time);
+      gain.gain.exponentialRampToValueAtTime(0.01, time + 0.2);
+      
+      noise.connect(filter);
+      filter.connect(gain);
+      gain.connect(audioCtx.destination);
+      
+      noise.start(time);
+    }
+
+    function playHihat(time = audioCtx.currentTime) {
+      const noise = audioCtx.createBufferSource();
+      const buffer = audioCtx.createBuffer(1, audioCtx.sampleRate * 0.05, audioCtx.sampleRate);
+      const data = buffer.getChannelData(0);
+      
+      for (let i = 0; i < buffer.length; i++) {
+        data[i] = Math.random() * 2 - 1;
+      }
+      
+      noise.buffer = buffer;
+      
+      const filter = audioCtx.createBiquadFilter();
+      filter.type = 'highpass';
+      filter.frequency.value = 7000;
+      
+      const gain = audioCtx.createGain();
+      gain.gain.setValueAtTime(0.3, time);
+      gain.gain.exponentialRampToValueAtTime(0.01, time + 0.05);
+      
+      noise.connect(filter);
+      filter.connect(gain);
+      gain.connect(audioCtx.destination);
+      
+      noise.start(time);
+    }
+
+    function playBass(time = audioCtx.currentTime, step = 0) {
+      const noteIndex = step % bassNotes.length;
+      const freq = bassNotes[noteIndex];
+      
+      const osc = audioCtx.createOscillator();
+      osc.type = 'sawtooth';
+      osc.frequency.value = freq;
+      
+      const filter = audioCtx.createBiquadFilter();
+      filter.type = 'lowpass';
+      filter.frequency.value = 800;
+      filter.Q.value = 5;
+      
+      const gain = audioCtx.createGain();
+      gain.gain.setValueAtTime(0.4, time);
+      gain.gain.exponentialRampToValueAtTime(0.01, time + 0.3);
+      
+      osc.connect(filter);
+      filter.connect(gain);
+      gain.connect(audioCtx.destination);
+      
+      osc.start(time);
+      osc.stop(time + 0.3);
+    }
+
+    // Initialize sequencer UI
+    function initSequencer() {
+      const container = document.getElementById('sequencer');
+      const tracks = ['kick', 'snare', 'hihat', 'bass'];
+      const trackNames = {
+        kick: 'Kick Drum',
+        snare: 'Snare',
+        hihat: 'Hi-Hat',
+        bass: 'Bass Line'
+      };
+
+      tracks.forEach(track => {
+        const trackDiv = document.createElement('div');
+        trackDiv.className = 'track';
+        trackDiv.dataset.track = track;
+
+        const header = document.createElement('div');
+        header.className = 'track-header';
+        header.dataset.track = track;
+        header.innerHTML = `
+          <div class="track-name">${trackNames[track]}</div>
+          <div></div>
+          <button class="track-mute" data-track="${track}">Mute</button>
+        `;
+
+        const stepsDiv = document.createElement('div');
+        stepsDiv.className = 'steps';
+
+        for (let i = 0; i < 16; i++) {
+          const step = document.createElement('div');
+          step.className = 'step';
+          if (i % 4 === 0) step.classList.add('beat-4');
+          step.dataset.track = track;
+          step.dataset.step = i;
+          step.onclick = () => toggleStep(track, i);
+          stepsDiv.appendChild(step);
+        }
+
+        trackDiv.appendChild(header);
+        trackDiv.appendChild(stepsDiv);
+        container.appendChild(trackDiv);
+      });
+
+      // Mute button handlers
+      document.querySelectorAll('.track-mute').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const track = btn.dataset.track;
+          muted[track] = !muted[track];
+          btn.classList.toggle('muted');
+          btn.textContent = muted[track] ? 'Unmute' : 'Mute';
+        });
+      });
+    }
+
+    function toggleStep(track, step) {
+      pattern[track][step] = !pattern[track][step];
+      updateStepDisplay(track, step);
+    }
+
+    function updateStepDisplay(track, step) {
+      const stepEl = document.querySelector(`.step[data-track="${track}"][data-step="${step}"]`);
+      stepEl.classList.toggle('active', pattern[track][step]);
+    }
+
+    function updateAllSteps() {
+      Object.keys(pattern).forEach(track => {
+        pattern[track].forEach((active, step) => {
+          updateStepDisplay(track, step);
+        });
+      });
+    }
+
+    function highlightCurrentStep(step) {
+      document.querySelectorAll('.step.playing').forEach(el => {
+        el.classList.remove('playing');
+      });
+
+      if (step !== null) {
+        document.querySelectorAll(`.step[data-step="${step}"]`).forEach(el => {
+          el.classList.add('playing');
+        });
+      }
+    }
+
+    // Playback engine
+    function playStep(step) {
+      const now = audioCtx.currentTime;
+      
+      if (pattern.kick[step] && !muted.kick) playKick(now);
+      if (pattern.snare[step] && !muted.snare) playSnare(now);
+      if (pattern.hihat[step] && !muted.hihat) playHihat(now);
+      if (pattern.bass[step] && !muted.bass) playBass(now, step);
+    }
+
+    function startPlayback() {
+      if (playing) return;
+      
+      playing = true;
+      currentStep = 0;
+      document.getElementById('btn-play').classList.add('playing');
+      document.getElementById('btn-play').textContent = '⏸';
+
+      const stepTime = (60 / tempo) * 250; // 16th notes
+
+      intervalId = setInterval(() => {
+        playStep(currentStep);
+        highlightCurrentStep(currentStep);
+        
+        currentStep = (currentStep + 1) % 16;
+      }, stepTime);
+    }
+
+    function stopPlayback() {
+      playing = false;
+      clearInterval(intervalId);
+      highlightCurrentStep(null);
+      document.getElementById('btn-play').classList.remove('playing');
+      document.getElementById('btn-play').textContent = '▶';
+      currentStep = 0;
+    }
+
+    function clearPattern() {
+      Object.keys(pattern).forEach(track => {
+        pattern[track].fill(false);
+      });
+      updateAllSteps();
+    }
+
+    function randomizePattern() {
+      const density = 0.3; // 30% chance per step
+      Object.keys(pattern).forEach(track => {
+        pattern[track] = pattern[track].map(() => Math.random() < density);
+      });
+      updateAllSteps();
+    }
+
+    function savePattern() {
+      const data = {
+        pattern,
+        tempo,
+        swing,
+        timestamp: new Date().toISOString()
+      };
+      
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `pattern-${Date.now()}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    async function loadPattern() {
+      document.getElementById('load-input').click();
+    }
+
+    document.getElementById('load-input').addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      
+      const text = await file.text();
+      const data = JSON.parse(text);
+      
+      Object.assign(pattern, data.pattern);
+      tempo = data.tempo || 120;
+      swing = data.swing || 0;
+      
+      document.getElementById('tempo').value = tempo;
+      document.getElementById('tempo-display').textContent = tempo;
+      document.getElementById('swing').value = swing;
+      document.getElementById('swing-label').textContent = swing + '%';
+      
+      updateAllSteps();
+      e.target.value = '';
+    });
+
+    // Event listeners
+    document.getElementById('btn-play').addEventListener('click', () => {
+      if (playing) stopPlayback();
+      else startPlayback();
+    });
+
+    document.getElementById('btn-stop').addEventListener('click', stopPlayback);
+    document.getElementById('btn-clear').addEventListener('click', clearPattern);
+    document.getElementById('btn-save').addEventListener('click', savePattern);
+    document.getElementById('btn-load').addEventListener('click', loadPattern);
+    document.getElementById('btn-random').addEventListener('click', randomizePattern);
+
+    document.getElementById('tempo').addEventListener('input', (e) => {
+      tempo = parseInt(e.target.value);
+      document.getElementById('tempo-display').textContent = tempo;
+      
+      if (playing) {
+        stopPlayback();
+        startPlayback();
+      }
+    });
+
+    document.getElementById('swing').addEventListener('input', (e) => {
+      swing = parseInt(e.target.value);
+      document.getElementById('swing-label').textContent = swing + '%';
+    });
+
+    // Initialize
+    initSequencer();
+
+    // Add some demo pattern
+    pattern.kick[0] = pattern.kick[4] = pattern.kick[8] = pattern.kick[12] = true;
+    pattern.snare[4] = pattern.snare[12] = true;
+    pattern.hihat[2] = pattern.hihat[6] = pattern.hihat[10] = pattern.hihat[14] = true;
+    pattern.bass[0] = pattern.bass[7] = true;
+    updateAllSteps();
+  </script>
+</body>
+</html>

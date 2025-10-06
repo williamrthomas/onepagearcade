@@ -20,11 +20,11 @@
     },
     {
       "id": "m01",
-      "title": "Music Sequencer (Placeholder)",
+      "title": "Step Sequencer",
       "category": "music",
-      "description": "Coming soon - Compose music with elegant text notation and Web Audio",
-      "playTime": "TBD",
-      "file": "#",
+      "description": "4-track drum machine and bassline with Web Audio synthesis",
+      "playTime": "5-15 min",
+      "file": "/games/m01-music-sequencer.html",
       "featured": true
     },
     {
