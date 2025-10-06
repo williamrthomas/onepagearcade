@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Boids Flocking Simulation</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      --bg: #020617;
+      --fg: #f1f5f9;
+      --accent: #38bdf8;
+      --panel: rgba(15, 23, 42, 0.85);
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: radial-gradient(circle at top, #1e293b 0%, #020617 55%, #01040f 100%);
+      color: var(--fg);
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      grid-template-rows: auto 1fr auto;
+      gap: 16px;
+      padding: 16px;
+    }
+
+    header {
+      grid-column: 1 / -1;
+      background: var(--panel);
+      backdrop-filter: blur(18px);
+      border: 1px solid rgba(148, 163, 184, 0.32);
+      border-radius: 16px;
+      padding: 16px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 1.5rem;
+    }
+
+    .header-controls {
+      display: flex;
+      gap: 8px;
+    }
+
+    aside {
+      background: var(--panel);
+      border: 1px solid rgba(148, 163, 184, 0.28);
+      border-radius: 16px;
+      padding: 20px;
+      display: grid;
+      gap: 20px;
+      align-content: start;
+      max-height: calc(100vh - 200px);
+      overflow-y: auto;
+    }
+
+    aside h2 {
+      margin: 0;
+      font-size: 0.95rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      opacity: 0.85;
+    }
+
+    label {
+      font-size: 0.85rem;
+      display: grid;
+      gap: 6px;
+    }
+
+    .control-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .control-value {
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    input[type="range"],
+    input[type="checkbox"],
+    select,
+    button {
+      appearance: none;
+      background: rgba(15, 23, 42, 0.65);
+      border: 1px solid rgba(148, 163, 184, 0.4);
+      border-radius: 8px;
+      padding: 8px 10px;
+      color: inherit;
+      font: inherit;
+      transition: all 150ms ease;
+    }
+
+    input[type="checkbox"] {
+      width: 20px;
+      height: 20px;
+      padding: 0;
+      cursor: pointer;
+      position: relative;
+    }
+
+    input[type="checkbox"]:checked {
+      background: var(--accent);
+      border-color: var(--accent);
+    }
+
+    input[type="checkbox"]:checked::after {
+      content: '✓';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: #000;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    button {
+      background: rgba(56, 189, 248, 0.15);
+      border: 1px solid rgba(56, 189, 248, 0.45);
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    button:hover:not(:disabled) {
+      border-color: #0ea5e9;
+      box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.35);
+    }
+
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    button.active {
+      background: rgba(16, 185, 129, 0.25);
+      border-color: #10b981;
+    }
+
+    main {
+      background: var(--panel);
+      border: 1px solid rgba(148, 163, 184, 0.3);
+      border-radius: 16px;
+      padding: 1rem;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+    }
+
+    #canvas {
+      width: 100%;
+      height: 100%;
+      max-width: 1000px;
+      max-height: 700px;
+      background: #020617;
+      border-radius: 12px;
+      cursor: crosshair;
+    }
+
+    .checkbox-label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.85rem;
+    }
+
+    .stats {
+      display: grid;
+      gap: 8px;
+      padding: 12px;
+      background: rgba(56, 189, 248, 0.1);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      border-radius: 8px;
+      font-size: 0.8rem;
+    }
+
+    .stat-row {
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .stat-label {
+      opacity: 0.8;
+    }
+
+    .stat-value {
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    footer {
+      grid-column: 1 / -1;
+      background: rgba(15, 23, 42, 0.65);
+      border: 1px solid rgba(148, 163, 184, 0.3);
+      border-radius: 12px;
+      padding: 12px 16px;
+      font-size: 0.85rem;
+      text-align: center;
+      opacity: 0.7;
+    }
+
+    @media (max-width: 1024px) {
+      body { grid-template-columns: 1fr; }
+      aside { max-height: none; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>Boids Flocking Simulation</h1>
+    </div>
+    <div class="header-controls">
+      <button onclick="window.close(); window.location.href='/';" style="background: rgba(148, 163, 184, 0.15); border-color: rgba(148, 163, 184, 0.45);">← Back to Arcade</button>
+      <button id="btn-reset">Reset Boids</button>
+      <button id="btn-pause">⏸ Pause</button>
+    </div>
+  </header>
+
+  <aside>
+    <section>
+      <h2>Core Rules</h2>
+      
+      <label>
+        <div class="control-header">
+          <span>Separation</span>
+          <span class="control-value" id="separation-val">1.5</span>
+        </div>
+        <input type="range" id="separation" min="0" max="3" step="0.1" value="1.5">
+      </label>
+
+      <label>
+        <div class="control-header">
+          <span>Alignment</span>
+          <span class="control-value" id="alignment-val">1.0</span>
+        </div>
+        <input type="range" id="alignment" min="0" max="3" step="0.1" value="1.0">
+      </label>
+
+      <label>
+        <div class="control-header">
+          <span>Cohesion</span>
+          <span class="control-value" id="cohesion-val">1.0</span>
+        </div>
+        <input type="range" id="cohesion" min="0" max="3" step="0.1" value="1.0">
+      </label>
+    </section>
+
+    <section>
+      <h2>Parameters</h2>
+      
+      <label>
+        <div class="control-header">
+          <span>Perception Radius</span>
+          <span class="control-value" id="perception-val">50</span>
+        </div>
+        <input type="range" id="perception" min="20" max="150" step="5" value="50">
+      </label>
+
+      <label>
+        <div class="control-header">
+          <span>Max Speed</span>
+          <span class="control-value" id="speed-val">4</span>
+        </div>
+        <input type="range" id="speed" min="1" max="8" step="0.5" value="4">
+      </label>
+
+      <label>
+        <div class="control-header">
+          <span>Boid Count</span>
+          <span class="control-value" id="count-val">100</span>
+        </div>
+        <input type="range" id="count" min="20" max="300" step="10" value="100">
+      </label>
+    </section>
+
+    <section>
+      <h2>Interactions</h2>
+      
+      <label class="checkbox-label">
+        <input type="checkbox" id="predator-mode">
+        <span>Predator Mode (click to chase)</span>
+      </label>
+
+      <label class="checkbox-label">
+        <input type="checkbox" id="attractor-mode">
+        <span>Attractor Mode (click to attract)</span>
+      </label>
+
+      <label class="checkbox-label">
+        <input type="checkbox" id="show-vectors">
+        <span>Show Force Vectors</span>
+      </label>
+
+      <label class="checkbox-label">
+        <input type="checkbox" id="trails" checked>
+        <span>Motion Trails</span>
+      </label>
+    </section>
+
+    <section>
+      <h2>Visual Style</h2>
+      <select id="draw-mode">
+        <option value="triangle">Triangles</option>
+        <option value="circle">Circles</option>
+        <option value="arrow">Arrows</option>
+        <option value="line">Lines</option>
+      </select>
+    </section>
+
+    <section>
+      <h2>Statistics</h2>
+      <div class="stats">
+        <div class="stat-row">
+          <span class="stat-label">Active Boids:</span>
+          <span class="stat-value" id="stat-count">100</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Avg Speed:</span>
+          <span class="stat-value" id="stat-speed">0</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">FPS:</span>
+          <span class="stat-value" id="stat-fps">60</span>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>About Boids</h2>
+      <p style="font-size: 0.8rem; line-height: 1.5; opacity: 0.8; margin: 0;">
+        Developed by Craig Reynolds in 1986, boids demonstrate emergent flocking behavior from three simple rules: stay apart, align direction, and move together.
+      </p>
+    </section>
+  </aside>
+
+  <main>
+    <canvas id="canvas"></canvas>
+  </main>
+
+  <footer>
+    Click and drag to interact • Emergent behavior from simple rules
+  </footer>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+
+    // Resize canvas
+    function resizeCanvas() {
+      const rect = canvas.getBoundingClientRect();
+      canvas.width = rect.width;
+      canvas.height = rect.height;
+    }
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+
+    // Boid class
+    class Boid {
+      constructor(x, y) {
+        this.position = { x, y };
+        this.velocity = {
+          x: (Math.random() - 0.5) * 4,
+          y: (Math.random() - 0.5) * 4
+        };
+        this.acceleration = { x: 0, y: 0 };
+        this.hue = Math.random() * 60 + 180; // Blue-cyan range
+      }
+
+      edges() {
+        if (this.position.x > canvas.width) this.position.x = 0;
+        else if (this.position.x < 0) this.position.x = canvas.width;
+        if (this.position.y > canvas.height) this.position.y = 0;
+        else if (this.position.y < 0) this.position.y = canvas.height;
+      }
+
+      align(boids) {
+        let perceptionRadius = config.perception;
+        let steering = { x: 0, y: 0 };
+        let total = 0;
+
+        for (let other of boids) {
+          let d = this.distance(other.position);
+          if (other !== this && d < perceptionRadius) {
+            steering.x += other.velocity.x;
+            steering.y += other.velocity.y;
+            total++;
+          }
+        }
+
+        if (total > 0) {
+          steering.x /= total;
+          steering.y /= total;
+          steering = this.setMag(steering, config.maxSpeed);
+          steering.x -= this.velocity.x;
+          steering.y -= this.velocity.y;
+          steering = this.limit(steering, config.maxForce);
+        }
+
+        return steering;
+      }
+
+      cohesion(boids) {
+        let perceptionRadius = config.perception;
+        let steering = { x: 0, y: 0 };
+        let total = 0;
+
+        for (let other of boids) {
+          let d = this.distance(other.position);
+          if (other !== this && d < perceptionRadius) {
+            steering.x += other.position.x;
+            steering.y += other.position.y;
+            total++;
+          }
+        }
+
+        if (total > 0) {
+          steering.x /= total;
+          steering.y /= total;
+          steering.x -= this.position.x;
+          steering.y -= this.position.y;
+          steering = this.setMag(steering, config.maxSpeed);
+          steering.x -= this.velocity.x;
+          steering.y -= this.velocity.y;
+          steering = this.limit(steering, config.maxForce);
+        }
+
+        return steering;
+      }
+
+      separation(boids) {
+        let perceptionRadius = config.perception / 2;
+        let steering = { x: 0, y: 0 };
+        let total = 0;
+
+        for (let other of boids) {
+          let d = this.distance(other.position);
+          if (other !== this && d < perceptionRadius) {
+            let diff = {
+              x: this.position.x - other.position.x,
+              y: this.position.y - other.position.y
+            };
+            diff.x /= d * d;
+            diff.y /= d * d;
+            steering.x += diff.x;
+            steering.y += diff.y;
+            total++;
+          }
+        }
+
+        if (total > 0) {
+          steering.x /= total;
+          steering.y /= total;
+          steering = this.setMag(steering, config.maxSpeed);
+          steering.x -= this.velocity.x;
+          steering.y -= this.velocity.y;
+          steering = this.limit(steering, config.maxForce);
+        }
+
+        return steering;
+      }
+
+      flock(boids) {
+        let alignment = this.align(boids);
+        let cohesion = this.cohesion(boids);
+        let separation = this.separation(boids);
+
+        alignment.x *= config.alignmentWeight;
+        alignment.y *= config.alignmentWeight;
+        cohesion.x *= config.cohesionWeight;
+        cohesion.y *= config.cohesionWeight;
+        separation.x *= config.separationWeight;
+        separation.y *= config.separationWeight;
+
+        this.acceleration.x += alignment.x;
+        this.acceleration.y += alignment.y;
+        this.acceleration.x += cohesion.x;
+        this.acceleration.y += cohesion.y;
+        this.acceleration.x += separation.x;
+        this.acceleration.y += separation.y;
+
+        if (config.showVectors) {
+          this.debugVectors = { alignment, cohesion, separation };
+        }
+      }
+
+      seek(target) {
+        let desired = {
+          x: target.x - this.position.x,
+          y: target.y - this.position.y
+        };
+        desired = this.setMag(desired, config.maxSpeed);
+        let steer = {
+          x: desired.x - this.velocity.x,
+          y: desired.y - this.velocity.y
+        };
+        steer = this.limit(steer, config.maxForce);
+        return steer;
+      }
+
+      flee(target) {
+        let desired = {
+          x: this.position.x - target.x,
+          y: this.position.y - target.y
+        };
+        desired = this.setMag(desired, config.maxSpeed * 1.5);
+        let steer = {
+          x: desired.x - this.velocity.x,
+          y: desired.y - this.velocity.y
+        };
+        steer = this.limit(steer, config.maxForce * 2);
+        return steer;
+      }
+
+      update() {
+        this.position.x += this.velocity.x;
+        this.position.y += this.velocity.y;
+        this.velocity.x += this.acceleration.x;
+        this.velocity.y += this.acceleration.y;
+        this.velocity = this.limit(this.velocity, config.maxSpeed);
+        this.acceleration.x = 0;
+        this.acceleration.y = 0;
+
+        // Update hue based on speed for dynamic coloring
+        const speed = Math.sqrt(this.velocity.x ** 2 + this.velocity.y ** 2);
+        this.hue = 180 + (speed / config.maxSpeed) * 80;
+      }
+
+      show() {
+        const angle = Math.atan2(this.velocity.y, this.velocity.x);
+        const speed = Math.sqrt(this.velocity.x ** 2 + this.velocity.y ** 2);
+        
+        ctx.save();
+        ctx.translate(this.position.x, this.position.y);
+        ctx.rotate(angle);
+
+        ctx.fillStyle = `hsl(${this.hue}, 80%, 60%)`;
+        ctx.strokeStyle = `hsl(${this.hue}, 80%, 70%)`;
+        ctx.lineWidth = 1.5;
+
+        switch(config.drawMode) {
+          case 'triangle':
+            ctx.beginPath();
+            ctx.moveTo(8, 0);
+            ctx.lineTo(-4, 4);
+            ctx.lineTo(-4, -4);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+            break;
+          
+          case 'circle':
+            ctx.beginPath();
+            ctx.arc(0, 0, 4, 0, Math.PI * 2);
+            ctx.fill();
+            break;
+          
+          case 'arrow':
+            ctx.beginPath();
+            ctx.moveTo(10, 0);
+            ctx.lineTo(-2, 0);
+            ctx.moveTo(6, -3);
+            ctx.lineTo(10, 0);
+            ctx.lineTo(6, 3);
+            ctx.stroke();
+            break;
+          
+          case 'line':
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.lineTo(-speed * 2, 0);
+            ctx.stroke();
+            break;
+        }
+
+        ctx.restore();
+
+        // Draw debug vectors
+        if (config.showVectors && this.debugVectors) {
+          const scale = 10;
+          ctx.strokeStyle = 'rgba(255, 100, 100, 0.6)';
+          this.drawVector(this.debugVectors.separation, scale);
+          ctx.strokeStyle = 'rgba(100, 255, 100, 0.6)';
+          this.drawVector(this.debugVectors.alignment, scale);
+          ctx.strokeStyle = 'rgba(100, 100, 255, 0.6)';
+          this.drawVector(this.debugVectors.cohesion, scale);
+        }
+      }
+
+      drawVector(vec, scale) {
+        ctx.beginPath();
+        ctx.moveTo(this.position.x, this.position.y);
+        ctx.lineTo(this.position.x + vec.x * scale, this.position.y + vec.y * scale);
+        ctx.stroke();
+      }
+
+      // Utility functions
+      distance(other) {
+        return Math.sqrt((this.position.x - other.x) ** 2 + (this.position.y - other.y) ** 2);
+      }
+
+      setMag(vec, mag) {
+        const len = Math.sqrt(vec.x ** 2 + vec.y ** 2);
+        if (len === 0) return vec;
+        return { x: (vec.x / len) * mag, y: (vec.y / len) * mag };
+      }
+
+      limit(vec, max) {
+        const len = Math.sqrt(vec.x ** 2 + vec.y ** 2);
+        if (len > max) {
+          return { x: (vec.x / len) * max, y: (vec.y / len) * max };
+        }
+        return vec;
+      }
+    }
+
+    // Configuration
+    const config = {
+      separationWeight: 1.5,
+      alignmentWeight: 1.0,
+      cohesionWeight: 1.0,
+      perception: 50,
+      maxSpeed: 4,
+      maxForce: 0.2,
+      boidCount: 100,
+      predatorMode: false,
+      attractorMode: false,
+      showVectors: false,
+      trails: true,
+      drawMode: 'triangle',
+      paused: false
+    };
+
+    let boids = [];
+    let mousePos = null;
+    let lastFrameTime = Date.now();
+    let fps = 60;
+
+    // Initialize boids
+    function initBoids() {
+      boids = [];
+      for (let i = 0; i < config.boidCount; i++) {
+        boids.push(new Boid(
+          Math.random() * canvas.width,
+          Math.random() * canvas.height
+        ));
+      }
+    }
+
+    // Mouse interaction
+    canvas.addEventListener('mousemove', (e) => {
+      const rect = canvas.getBoundingClientRect();
+      mousePos = {
+        x: e.clientX - rect.left,
+        y: e.clientY - rect.top
+      };
+    });
+
+    canvas.addEventListener('mouseleave', () => {
+      mousePos = null;
+    });
+
+    // Animation loop
+    function animate() {
+      if (!config.paused) {
+        // Trails effect
+        if (config.trails) {
+          ctx.fillStyle = 'rgba(2, 6, 23, 0.1)';
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+        } else {
+          ctx.fillStyle = '#020617';
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+
+        let totalSpeed = 0;
+
+        for (let boid of boids) {
+          boid.edges();
+          boid.flock(boids);
+
+          // Mouse interaction
+          if (mousePos) {
+            if (config.predatorMode) {
+              const flee = boid.flee(mousePos);
+              boid.acceleration.x += flee.x * 2;
+              boid.acceleration.y += flee.y * 2;
+            } else if (config.attractorMode) {
+              const seek = boid.seek(mousePos);
+              boid.acceleration.x += seek.x;
+              boid.acceleration.y += seek.y;
+            }
+          }
+
+          boid.update();
+          boid.show();
+
+          totalSpeed += Math.sqrt(boid.velocity.x ** 2 + boid.velocity.y ** 2);
+        }
+
+        // Update stats
+        document.getElementById('stat-count').textContent = boids.length;
+        document.getElementById('stat-speed').textContent = (totalSpeed / boids.length).toFixed(1);
+
+        // FPS calculation
+        const now = Date.now();
+        fps = Math.round(1000 / (now - lastFrameTime));
+        lastFrameTime = now;
+        document.getElementById('stat-fps').textContent = fps;
+      }
+
+      requestAnimationFrame(animate);
+    }
+
+    // Controls
+    function setupControls() {
+      document.getElementById('separation').oninput = (e) => {
+        config.separationWeight = parseFloat(e.target.value);
+        document.getElementById('separation-val').textContent = e.target.value;
+      };
+
+      document.getElementById('alignment').oninput = (e) => {
+        config.alignmentWeight = parseFloat(e.target.value);
+        document.getElementById('alignment-val').textContent = e.target.value;
+      };
+
+      document.getElementById('cohesion').oninput = (e) => {
+        config.cohesionWeight = parseFloat(e.target.value);
+        document.getElementById('cohesion-val').textContent = e.target.value;
+      };
+
+      document.getElementById('perception').oninput = (e) => {
+        config.perception = parseInt(e.target.value);
+        document.getElementById('perception-val').textContent = e.target.value;
+      };
+
+      document.getElementById('speed').oninput = (e) => {
+        config.maxSpeed = parseFloat(e.target.value);
+        document.getElementById('speed-val').textContent = e.target.value;
+      };
+
+      document.getElementById('count').oninput = (e) => {
+        config.boidCount = parseInt(e.target.value);
+        document.getElementById('count-val').textContent = e.target.value;
+        initBoids();
+      };
+
+      document.getElementById('predator-mode').onchange = (e) => {
+        config.predatorMode = e.target.checked;
+        if (e.target.checked) {
+          document.getElementById('attractor-mode').checked = false;
+          config.attractorMode = false;
+        }
+      };
+
+      document.getElementById('attractor-mode').onchange = (e) => {
+        config.attractorMode = e.target.checked;
+        if (e.target.checked) {
+          document.getElementById('predator-mode').checked = false;
+          config.predatorMode = false;
+        }
+      };
+
+      document.getElementById('show-vectors').onchange = (e) => {
+        config.showVectors = e.target.checked;
+      };
+
+      document.getElementById('trails').onchange = (e) => {
+        config.trails = e.target.checked;
+      };
+
+      document.getElementById('draw-mode').onchange = (e) => {
+        config.drawMode = e.target.value;
+      };
+
+      document.getElementById('btn-reset').onclick = () => {
+        initBoids();
+      };
+
+      document.getElementById('btn-pause').onclick = (e) => {
+        config.paused = !config.paused;
+        e.target.textContent = config.paused ? '▶ Play' : '⏸ Pause';
+        e.target.classList.toggle('active');
+      };
+    }
+
+    // Initialize
+    initBoids();
+    setupControls();
+    animate();
+  </script>
+</body>
+</html>

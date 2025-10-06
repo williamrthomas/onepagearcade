@@ -66,11 +66,11 @@
     },
     {
       "id": "g05",
-      "title": "Boids Flocking (Placeholder)",
+      "title": "Boids Flocking",
       "category": "learning",
-      "description": "Coming soon - Emergent behavior from simple steering rules",
-      "playTime": "TBD",
-      "file": "#"
+      "description": "Emergent behavior from three simple steering rules",
+      "playTime": "3-10 min",
+      "file": "/games/g05-boids.html"
     },
     {
       "id": "g06",
