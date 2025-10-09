@@ -58,11 +58,11 @@
   "more": [
     {
       "id": "g04",
-      "title": "Fluid Simulation (Placeholder)",
+      "title": "Fluid Simulation",
       "category": "art",
-      "description": "Coming soon - Interactive fluid dynamics with particle systems",
-      "playTime": "TBD",
-      "file": "#"
+      "description": "Interactive fluid dynamics with thousands of swirling particles",
+      "playTime": "5-20 min",
+      "file": "/games/g04-fluid.html"
     },
     {
       "id": "g05",
@@ -95,6 +95,14 @@
       "description": "Compare A*, Dijkstra, BFS, and Greedy Best-First in real-time",
       "playTime": "5-15 min",
       "file": "/games/l02-pathfinding.html"
+    },
+    {
+      "id": "m02",
+      "title": "Sonic Flow Field",
+      "category": "music",
+      "description": "Paint flowing velocity fields that generate evolving ambient soundscapes",
+      "playTime": "5-20 min",
+      "file": "/games/m02-sonic-flow.html"
     },
     {
       "id": "g07",

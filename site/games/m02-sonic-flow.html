@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sonic Flow Field</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      font-family: "Inter", system-ui, -apple-system, sans-serif;
+      --bg: #020617;
+      --fg: #f1f5f9;
+      --accent: #38bdf8;
+      --panel: rgba(15, 23, 42, 0.85);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: radial-gradient(circle at top, #1e293b 0%, #020617 55%, #01040f 100%);
+      color: var(--fg);
+      display: grid;
+      grid-template-columns: 300px 1fr;
+      grid-template-rows: auto 1fr auto;
+      gap: 16px;
+      padding: 16px;
+    }
+    header {
+      grid-column: 1 / -1;
+      background: var(--panel);
+      backdrop-filter: blur(18px);
+      border: 1px solid rgba(148, 163, 184, 0.32);
+      border-radius: 16px;
+      padding: 16px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+    header h1 { margin: 0; font-size: 1.5rem; }
+    .header-controls { display: flex; gap: 8px; }
+    aside {
+      background: var(--panel);
+      border: 1px solid rgba(148, 163, 184, 0.28);
+      border-radius: 16px;
+      padding: 20px;
+      display: grid;
+      gap: 20px;
+      align-content: start;
+      max-height: calc(100vh - 200px);
+      overflow-y: auto;
+    }
+    aside h2 {
+      margin: 0;
+      font-size: 0.95rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      opacity: 0.85;
+    }
+    label {
+      font-size: 0.85rem;
+      display: grid;
+      gap: 6px;
+    }
+    .control-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .control-value {
+      font-weight: 700;
+      color: var(--accent);
+    }
+    input[type="range"], select, button {
+      appearance: none;
+      background: rgba(15, 23, 42, 0.65);
+      border: 1px solid rgba(148, 163, 184, 0.4);
+      border-radius: 8px;
+      padding: 8px 10px;
+      color: inherit;
+      font: inherit;
+      transition: all 150ms ease;
+    }
+    button {
+      background: rgba(56, 189, 248, 0.15);
+      border: 1px solid rgba(56, 189, 248, 0.45);
+      font-weight: 600;
+      cursor: pointer;
+    }
+    button:hover:not(:disabled) {
+      border-color: #0ea5e9;
+      box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.35);
+    }
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    main {
+      background: var(--panel);
+      border: 1px solid rgba(148, 163, 184, 0.3);
+      border-radius: 16px;
+      padding: 1rem;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+      min-height: 0;
+    }
+    #canvas {
+      width: 100%;
+      height: 100%;
+      max-width: 900px;
+      max-height: 100%;
+      background: #000;
+      border-radius: 12px;
+      cursor: crosshair;
+      display: block;
+    }
+    footer {
+      grid-column: 1 / -1;
+      background: rgba(15, 23, 42, 0.65);
+      border: 1px solid rgba(148, 163, 184, 0.3);
+      border-radius: 12px;
+      padding: 12px 16px;
+      font-size: 0.85rem;
+      text-align: center;
+      opacity: 0.7;
+    }
+    .scale-buttons {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    .scale-btn {
+      padding: 6px;
+      font-size: 0.8rem;
+    }
+    .scale-btn.active {
+      background: rgba(56, 189, 248, 0.3);
+      border-color: var(--accent);
+    }
+    @media (max-width: 1024px) {
+      body { grid-template-columns: 1fr; }
+      aside { max-height: none; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div><h1>Sonic Flow Field</h1></div>
+    <div class="header-controls">
+      <button onclick="window.close(); window.location.href='/';" style="background: rgba(148, 163, 184, 0.15); border-color: rgba(148, 163, 184, 0.45);">← Back to Arcade</button>
+      <button id="btn-clear">Clear</button>
+      <button id="btn-audio">🔇 Start Audio</button>
+    </div>
+  </header>
+
+  <aside>
+    <section>
+      <h2>Flow Field</h2>
+      <label>
+        <div class="control-header">
+          <span>Brush Size</span>
+          <span class="control-value" id="brush-val">40</span>
+        </div>
+        <input type="range" id="brush" min="20" max="100" step="10" value="40">
+      </label>
+      <label>
+        <div class="control-header">
+          <span>Flow Strength</span>
+          <span class="control-value" id="strength-val">0.3</span>
+        </div>
+        <input type="range" id="strength" min="0.1" max="1" step="0.1" value="0.3">
+      </label>
+      <label>
+        <div class="control-header">
+          <span>Turbulence</span>
+          <span class="control-value" id="turbulence-val">0.02</span>
+        </div>
+        <input type="range" id="turbulence" min="0" max="0.1" step="0.01" value="0.02">
+      </label>
+    </section>
+
+    <section>
+      <h2>Particles</h2>
+      <label>
+        <div class="control-header">
+          <span>Count</span>
+          <span class="control-value" id="count-val">200</span>
+        </div>
+        <input type="range" id="count" min="50" max="500" step="50" value="200">
+      </label>
+      <label>
+        <div class="control-header">
+          <span>Trail Length</span>
+          <span class="control-value" id="trail-val">0.05</span>
+        </div>
+        <input type="range" id="trail" min="0.01" max="0.2" step="0.01" value="0.05">
+      </label>
+    </section>
+
+    <section>
+      <h2>Audio</h2>
+      <label>
+        <div class="control-header">
+          <span>Volume</span>
+          <span class="control-value" id="volume-val">0.3</span>
+        </div>
+        <input type="range" id="volume" min="0" max="1" step="0.1" value="0.3">
+      </label>
+      <label>
+        <div class="control-header">
+          <span>Reverb</span>
+          <span class="control-value" id="reverb-val">0.5</span>
+        </div>
+        <input type="range" id="reverb" min="0" max="1" step="0.1" value="0.5">
+      </label>
+      <label>
+        <div class="control-header">
+          <span>Note Density</span>
+          <span class="control-value" id="density-val">0.02</span>
+        </div>
+        <input type="range" id="density" min="0.005" max="0.05" step="0.005" value="0.02">
+      </label>
+    </section>
+
+    <section>
+      <h2>Scale</h2>
+      <div class="scale-buttons" id="scale-buttons"></div>
+    </section>
+  </aside>
+
+  <main>
+    <canvas id="canvas"></canvas>
+  </main>
+
+  <footer>
+    Click and drag to paint flow fields • Particles follow flows and generate ambient music
+  </footer>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d', { alpha: false });
+
+    // Audio Context
+    let audioCtx = null;
+    let masterGain = null;
+    let reverb = null;
+    let reverbGain = null;
+    let dryGain = null;
+    let audioEnabled = false;
+
+    const scales = {
+      pentatonic: [0, 2, 4, 7, 9],
+      major: [0, 2, 4, 5, 7, 9, 11],
+      minor: [0, 2, 3, 5, 7, 8, 10],
+      dorian: [0, 2, 3, 5, 7, 9, 10],
+      phrygian: [0, 1, 3, 5, 7, 8, 10],
+      chromatic: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+    };
+    let currentScale = scales.pentatonic;
+
+    function initAudio() {
+      if (audioCtx) return;
+      
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      masterGain = audioCtx.createGain();
+      masterGain.gain.value = config.volume;
+      
+      // Create reverb
+      reverb = audioCtx.createConvolver();
+      reverbGain = audioCtx.createGain();
+      dryGain = audioCtx.createGain();
+      
+      // Simple reverb impulse
+      const reverbTime = 2;
+      const sampleRate = audioCtx.sampleRate;
+      const length = sampleRate * reverbTime;
+      const impulse = audioCtx.createBuffer(2, length, sampleRate);
+      
+      for (let channel = 0; channel < 2; channel++) {
+        const channelData = impulse.getChannelData(channel);
+        for (let i = 0; i < length; i++) {
+          channelData[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / length, 2);
+        }
+      }
+      reverb.buffer = impulse;
+      
+      // Connect reverb chain
+      reverbGain.connect(reverb);
+      reverb.connect(masterGain);
+      dryGain.connect(masterGain);
+      masterGain.connect(audioCtx.destination);
+      
+      updateReverbMix();
+      audioEnabled = true;
+    }
+
+    function updateReverbMix() {
+      if (!audioCtx) return;
+      const wet = config.reverb;
+      const dry = 1 - wet;
+      reverbGain.gain.setValueAtTime(wet, audioCtx.currentTime);
+      dryGain.gain.setValueAtTime(dry, audioCtx.currentTime);
+    }
+
+    function playNote(frequency, duration = 0.5, velocity = 0.5) {
+      if (!audioEnabled || !audioCtx) return;
+      
+      const now = audioCtx.currentTime;
+      const osc = audioCtx.createOscillator();
+      const gainNode = audioCtx.createGain();
+      
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(frequency, now);
+      
+      const volume = velocity * config.volume * 0.1;
+      gainNode.gain.setValueAtTime(0, now);
+      gainNode.gain.linearRampToValueAtTime(volume, now + 0.01);
+      gainNode.gain.exponentialRampToValueAtTime(0.001, now + duration);
+      
+      osc.connect(gainNode);
+      gainNode.connect(dryGain);
+      gainNode.connect(reverbGain);
+      
+      osc.start(now);
+      osc.stop(now + duration);
+    }
+
+    function positionToFrequency(x, y) {
+      const octave = 3 + Math.floor((1 - y / canvas.height) * 3);
+      const scaleIndex = Math.floor((x / canvas.width) * currentScale.length);
+      const semitone = currentScale[scaleIndex % currentScale.length];
+      const midiNote = 12 * octave + semitone;
+      return 440 * Math.pow(2, (midiNote - 69) / 12);
+    }
+
+    function resizeCanvas() {
+      const rect = canvas.getBoundingClientRect();
+      const width = Math.max(rect.width, 400);
+      const height = Math.max(rect.height, 300);
+      canvas.width = width;
+      canvas.height = height;
+      ctx.fillStyle = '#000';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      initFlowField();
+      if (particles.length === 0) {
+        initParticles();
+      }
+    }
+    
+    setTimeout(resizeCanvas, 100);
+    window.addEventListener('resize', resizeCanvas);
+
+    const config = {
+      brushSize: 40,
+      flowStrength: 0.3,
+      turbulence: 0.02,
+      particleCount: 200,
+      trailFade: 0.05,
+      volume: 0.3,
+      reverb: 0.5,
+      noteDensity: 0.02
+    };
+
+    const flowField = [];
+    const gridSize = 20;
+    let flowCols, flowRows;
+
+    function initFlowField() {
+      flowCols = Math.ceil(canvas.width / gridSize);
+      flowRows = Math.ceil(canvas.height / gridSize);
+      flowField.length = 0;
+      
+      for (let y = 0; y < flowRows; y++) {
+        for (let x = 0; x < flowCols; x++) {
+          flowField.push({ vx: 0, vy: 0 });
+        }
+      }
+    }
+
+    class Particle {
+      constructor() {
+        this.reset();
+        this.lastSoundTime = 0;
+      }
+
+      reset() {
+        this.x = Math.random() * canvas.width;
+        this.y = Math.random() * canvas.height;
+        this.vx = 0;
+        this.vy = 0;
+        this.hue = Math.random() * 360;
+        this.life = 1;
+      }
+
+      update() {
+        // Get flow field influence
+        const gridX = Math.floor(this.x / gridSize);
+        const gridY = Math.floor(this.y / gridSize);
+        const index = gridY * flowCols + gridX;
+        
+        if (index >= 0 && index < flowField.length) {
+          const flow = flowField[index];
+          this.vx += flow.vx * config.flowStrength;
+          this.vy += flow.vy * config.flowStrength;
+        }
+        
+        // Add turbulence
+        this.vx += (Math.random() - 0.5) * config.turbulence;
+        this.vy += (Math.random() - 0.5) * config.turbulence;
+        
+        // Apply velocity
+        this.x += this.vx;
+        this.y += this.vy;
+        
+        // Damping
+        this.vx *= 0.95;
+        this.vy *= 0.95;
+        
+        // Wrap edges
+        if (this.x < 0) this.x = canvas.width;
+        if (this.x > canvas.width) this.x = 0;
+        if (this.y < 0) this.y = canvas.height;
+        if (this.y > canvas.height) this.y = 0;
+        
+        // Trigger sound based on velocity
+        const speed = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
+        const now = Date.now();
+        if (speed > 0.5 && Math.random() < config.noteDensity && now - this.lastSoundTime > 100) {
+          const freq = positionToFrequency(this.x, this.y);
+          const velocity = Math.min(speed / 5, 1);
+          playNote(freq, 0.8, velocity);
+          this.lastSoundTime = now;
+          this.hue = (this.hue + 10) % 360;
+        }
+      }
+
+      draw() {
+        const alpha = Math.min(this.life, 1);
+        ctx.fillStyle = `hsla(${this.hue}, 70%, 60%, ${alpha})`;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, 2, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    let particles = [];
+    let mouse = { x: 0, y: 0, prevX: 0, prevY: 0, down: false };
+
+    function initParticles() {
+      particles = [];
+      for (let i = 0; i < config.particleCount; i++) {
+        particles.push(new Particle());
+      }
+    }
+
+    function handleMouse(e, isTouch = false) {
+      const rect = canvas.getBoundingClientRect();
+      const clientX = isTouch ? e.touches[0].clientX : e.clientX;
+      const clientY = isTouch ? e.touches[0].clientY : e.clientY;
+      
+      mouse.prevX = mouse.x;
+      mouse.prevY = mouse.y;
+      mouse.x = clientX - rect.left;
+      mouse.y = clientY - rect.top;
+    }
+
+    canvas.addEventListener('mousedown', (e) => {
+      handleMouse(e);
+      mouse.down = true;
+    });
+    canvas.addEventListener('mousemove', (e) => {
+      handleMouse(e);
+      if (mouse.down) paintFlow();
+    });
+    canvas.addEventListener('mouseup', () => mouse.down = false);
+    canvas.addEventListener('mouseleave', () => mouse.down = false);
+
+    canvas.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      handleMouse(e, true);
+      mouse.down = true;
+    });
+    canvas.addEventListener('touchmove', (e) => {
+      e.preventDefault();
+      handleMouse(e, true);
+      paintFlow();
+    });
+    canvas.addEventListener('touchend', () => mouse.down = false);
+
+    function paintFlow() {
+      const dx = mouse.x - mouse.prevX;
+      const dy = mouse.y - mouse.prevY;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      
+      if (dist < 1) return;
+      
+      const nx = dx / dist;
+      const ny = dy / dist;
+      
+      const startGridX = Math.floor((mouse.x - config.brushSize) / gridSize);
+      const endGridX = Math.floor((mouse.x + config.brushSize) / gridSize);
+      const startGridY = Math.floor((mouse.y - config.brushSize) / gridSize);
+      const endGridY = Math.floor((mouse.y + config.brushSize) / gridSize);
+      
+      for (let gy = startGridY; gy <= endGridY; gy++) {
+        for (let gx = startGridX; gx <= endGridX; gx++) {
+          if (gx < 0 || gx >= flowCols || gy < 0 || gy >= flowRows) continue;
+          
+          const cellX = gx * gridSize + gridSize / 2;
+          const cellY = gy * gridSize + gridSize / 2;
+          const cellDist = Math.sqrt((cellX - mouse.x) ** 2 + (cellY - mouse.y) ** 2);
+          
+          if (cellDist < config.brushSize) {
+            const index = gy * flowCols + gx;
+            const falloff = 1 - cellDist / config.brushSize;
+            flowField[index].vx += nx * falloff * 0.5;
+            flowField[index].vy += ny * falloff * 0.5;
+            
+            // Clamp flow values
+            const maxFlow = 2;
+            flowField[index].vx = Math.max(-maxFlow, Math.min(maxFlow, flowField[index].vx));
+            flowField[index].vy = Math.max(-maxFlow, Math.min(maxFlow, flowField[index].vy));
+          }
+        }
+      }
+    }
+
+    function animate() {
+      // Fade effect for trails
+      ctx.fillStyle = `rgba(0, 0, 0, ${config.trailFade})`;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      // Decay flow field
+      flowField.forEach(cell => {
+        cell.vx *= 0.99;
+        cell.vy *= 0.99;
+      });
+      
+      particles.forEach(p => {
+        p.update();
+        p.draw();
+      });
+      
+      requestAnimationFrame(animate);
+    }
+
+    function renderScaleButtons() {
+      const container = document.getElementById('scale-buttons');
+      container.innerHTML = '';
+      
+      Object.keys(scales).forEach(name => {
+        const btn = document.createElement('button');
+        btn.className = 'scale-btn';
+        btn.textContent = name.charAt(0).toUpperCase() + name.slice(1);
+        if (scales[name] === currentScale) btn.classList.add('active');
+        btn.onclick = () => {
+          currentScale = scales[name];
+          renderScaleButtons();
+        };
+        container.appendChild(btn);
+      });
+    }
+
+    function setupControls() {
+      ['brush', 'strength', 'turbulence', 'count', 'trail', 'volume', 'reverb', 'density'].forEach(id => {
+        const el = document.getElementById(id);
+        const mapping = {
+          brush: 'brushSize',
+          strength: 'flowStrength',
+          turbulence: 'turbulence',
+          count: 'particleCount',
+          trail: 'trailFade',
+          volume: 'volume',
+          reverb: 'reverb',
+          density: 'noteDensity'
+        };
+        
+        el.oninput = (e) => {
+          const key = mapping[id];
+          config[key] = id === 'count' ? parseInt(e.target.value) : parseFloat(e.target.value);
+          document.getElementById(id + '-val').textContent = e.target.value;
+          
+          if (id === 'count') {
+            initParticles();
+          }
+          if (id === 'volume' && masterGain) {
+            masterGain.gain.setValueAtTime(config.volume, audioCtx.currentTime);
+          }
+          if (id === 'reverb') {
+            updateReverbMix();
+          }
+        };
+      });
+
+      document.getElementById('btn-clear').onclick = () => {
+        ctx.fillStyle = '#000';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        initFlowField();
+        initParticles();
+      };
+
+      document.getElementById('btn-audio').onclick = (e) => {
+        if (!audioEnabled) {
+          initAudio();
+          e.target.textContent = '🔊 Audio On';
+          e.target.style.background = 'rgba(16, 185, 129, 0.2)';
+          e.target.style.borderColor = 'rgba(16, 185, 129, 0.5)';
+        } else {
+          audioEnabled = false;
+          e.target.textContent = '🔇 Start Audio';
+          e.target.style.background = 'rgba(56, 189, 248, 0.15)';
+          e.target.style.borderColor = 'rgba(56, 189, 248, 0.45)';
+        }
+      };
+    }
+
+    initFlowField();
+    initParticles();
+    renderScaleButtons();
+    setupControls();
+    animate();
+  </script>
+</body>
+</html>
