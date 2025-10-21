@@ -97,6 +97,14 @@
       "file": "/games/l02-pathfinding.html"
     },
     {
+      "id": "l03",
+      "title": "Graph Algorithm Visualizer",
+      "category": "learning",
+      "description": "Explore graph traversal with BFS, DFS, Dijkstra, and Prim's MST",
+      "playTime": "5-15 min",
+      "file": "/games/l03-graph-algorithms.html"
+    },
+    {
       "id": "m02",
       "title": "Sonic Flow Field",
       "category": "music",
