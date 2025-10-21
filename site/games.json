@@ -105,6 +105,14 @@
       "file": "/games/m02-sonic-flow.html"
     },
     {
+      "id": "m03",
+      "title": "Synth Piano",
+      "category": "music",
+      "description": "Interactive keyboard synthesizer with ADSR, filters, and recording",
+      "playTime": "5-20 min",
+      "file": "/games/m03-synth-piano.html"
+    },
+    {
       "id": "g07",
       "title": "Choose Your Adventure (Placeholder)",
       "category": "games",
