@@ -122,11 +122,11 @@
     },
     {
       "id": "g07",
-      "title": "Choose Your Adventure (Placeholder)",
-      "category": "games",
-      "description": "Coming soon - Branching narrative with multiple endings",
-      "playTime": "TBD",
-      "file": "#"
+      "title": "Pattern Maker",
+      "category": "art",
+      "description": "Create seamless repeating patterns with geometric grids and color",
+      "playTime": "5-20 min",
+      "file": "/games/g07-pattern-maker.html"
     }
   ]
 }
