@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pattern Maker</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      --bg: #020617;
+      --fg: #f1f5f9;
+      --accent: #38bdf8;
+      --panel: rgba(15, 23, 42, 0.85);
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 35%, #0ea5e9 100%);
+      color: var(--fg);
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      grid-template-rows: auto 1fr auto;
+      gap: 16px;
+      padding: 16px;
+    }
+
+    header {
+      grid-column: 1 / -1;
+      background: var(--panel);
+      backdrop-filter: blur(18px);
+      border: 1px solid rgba(148, 163, 184, 0.32);
+      border-radius: 16px;
+      padding: 16px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 1.5rem;
+    }
+
+    header p {
+      margin: 4px 0 0;
+      opacity: 0.75;
+      font-size: 0.9rem;
+    }
+
+    aside {
+      background: var(--panel);
+      border: 1px solid rgba(148, 163, 184, 0.28);
+      border-radius: 16px;
+      padding: 20px;
+      display: grid;
+      gap: 20px;
+      align-content: start;
+    }
+
+    aside h2 {
+      margin: 0;
+      font-size: 0.95rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      opacity: 0.85;
+    }
+
+    aside section {
+      display: grid;
+      gap: 12px;
+    }
+
+    label {
+      font-size: 0.85rem;
+      display: grid;
+      gap: 6px;
+    }
+
+    button, select {
+      appearance: none;
+      background: rgba(56, 189, 248, 0.15);
+      border: 1px solid rgba(56, 189, 248, 0.45);
+      border-radius: 8px;
+      padding: 10px 12px;
+      color: inherit;
+      font: inherit;
+      font-weight: 600;
+      transition: all 150ms ease;
+      cursor: pointer;
+    }
+
+    button:hover, select:hover {
+      border-color: #0ea5e9;
+      box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.35);
+    }
+
+    button.active {
+      background: rgba(56, 189, 248, 0.35);
+      border-color: var(--accent);
+    }
+
+    input[type="color"] {
+      width: 100%;
+      height: 48px;
+      border: 2px solid rgba(148, 163, 184, 0.4);
+      border-radius: 8px;
+      cursor: pointer;
+      background: transparent;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--accent);
+    }
+
+    main {
+      background: var(--panel);
+      border: 1px solid rgba(148, 163, 184, 0.28);
+      border-radius: 16px;
+      padding: 24px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      align-items: center;
+      justify-items: center;
+    }
+
+    .canvas-container {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .canvas-container h3 {
+      margin: 0;
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      opacity: 0.85;
+    }
+
+    canvas {
+      border: 2px solid rgba(148, 163, 184, 0.4);
+      border-radius: 12px;
+      background: #ffffff;
+      cursor: crosshair;
+      box-shadow: 0 8px 32px rgba(2, 6, 23, 0.4);
+    }
+
+    #editor-canvas {
+      image-rendering: pixelated;
+    }
+
+    #preview-canvas {
+      image-rendering: pixelated;
+    }
+
+    footer {
+      grid-column: 1 / -1;
+      background: rgba(15, 23, 42, 0.65);
+      border: 1px solid rgba(148, 163, 184, 0.28);
+      border-radius: 16px;
+      padding: 12px 20px;
+      font-size: 0.85rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+    }
+
+    footer span {
+      opacity: 0.7;
+    }
+
+    .color-preset {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(32px, 1fr));
+      gap: 6px;
+    }
+
+    .color-preset button {
+      width: 100%;
+      aspect-ratio: 1;
+      padding: 0;
+      border-radius: 6px;
+      border: 2px solid rgba(148, 163, 184, 0.3);
+    }
+
+    .color-preset button:hover {
+      border-color: var(--accent);
+      transform: scale(1.1);
+    }
+
+    @media (max-width: 1200px) {
+      body {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto auto 1fr auto;
+      }
+      main {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>Pattern Maker</h1>
+      <p>Create seamless repeating patterns with geometric grids</p>
+    </div>
+  </header>
+
+  <aside>
+    <section>
+      <h2>Grid Type</h2>
+      <select id="grid-type">
+        <option value="square">Square Grid</option>
+        <option value="diamond">Diamond Grid</option>
+        <option value="triangle">Triangle Grid</option>
+      </select>
+    </section>
+
+    <section>
+      <h2>Grid Settings</h2>
+      <label>
+        <span>Grid Size: <output id="grid-size-value">16</output></span>
+        <input type="range" id="grid-size" min="4" max="32" value="16" step="1" />
+      </label>
+      <button id="toggle-grid">Hide Grid Lines</button>
+    </section>
+
+    <section>
+      <h2>Color</h2>
+      <label>
+        <span>Current Color</span>
+        <input type="color" id="color-picker" value="#3b82f6" />
+      </label>
+      <div class="color-preset" id="color-presets"></div>
+    </section>
+
+    <section>
+      <h2>Tools</h2>
+      <button id="clear-btn">Clear Canvas</button>
+      <button id="fill-btn">Fill All</button>
+    </section>
+
+    <section>
+      <h2>Export</h2>
+      <button id="export-tile">Export Tile (PNG)</button>
+      <button id="export-pattern">Export Pattern (PNG)</button>
+      <button id="export-svg">Export as SVG</button>
+    </section>
+  </aside>
+
+  <main>
+    <div class="canvas-container">
+      <h3>Single Tile Editor</h3>
+      <canvas id="editor-canvas" width="400" height="400"></canvas>
+    </div>
+    <div class="canvas-container">
+      <h3>3×3 Pattern Preview</h3>
+      <canvas id="preview-canvas" width="400" height="400"></canvas>
+    </div>
+  </main>
+
+  <footer>
+    <span>Click on the editor to fill cells. Pattern updates in real-time.</span>
+    <span id="status">Ready</span>
+  </footer>
+
+  <script>
+    // Canvas setup
+    const editorCanvas = document.getElementById('editor-canvas');
+    const previewCanvas = document.getElementById('preview-canvas');
+    const editorCtx = editorCanvas.getContext('2d');
+    const previewCtx = previewCanvas.getContext('2d');
+
+    // UI Elements
+    const gridTypeSelect = document.getElementById('grid-type');
+    const gridSizeSlider = document.getElementById('grid-size');
+    const gridSizeValue = document.getElementById('grid-size-value');
+    const colorPicker = document.getElementById('color-picker');
+    const toggleGridBtn = document.getElementById('toggle-grid');
+    const clearBtn = document.getElementById('clear-btn');
+    const fillBtn = document.getElementById('fill-btn');
+    const exportTileBtn = document.getElementById('export-tile');
+    const exportPatternBtn = document.getElementById('export-pattern');
+    const exportSvgBtn = document.getElementById('export-svg');
+    const colorPresetsContainer = document.getElementById('color-presets');
+    const status = document.getElementById('status');
+
+    // State
+    const state = {
+      gridType: 'square',
+      gridSize: 16,
+      showGrid: true,
+      currentColor: '#3b82f6',
+      cells: new Map(), // Store filled cells as "x,y" -> color
+    };
+
+    // Color presets
+    const colorPresets = [
+      '#ef4444', '#f97316', '#f59e0b', '#eab308',
+      '#84cc16', '#22c55e', '#10b981', '#14b8a6',
+      '#06b6d4', '#0ea5e9', '#3b82f6', '#6366f1',
+      '#8b5cf6', '#a855f7', '#d946ef', '#ec4899',
+      '#f43f5e', '#000000', '#ffffff', '#94a3b8'
+    ];
+
+    // Initialize color presets
+    function initColorPresets() {
+      colorPresetsContainer.innerHTML = '';
+      colorPresets.forEach(color => {
+        const btn = document.createElement('button');
+        btn.style.background = color;
+        btn.addEventListener('click', () => {
+          colorPicker.value = color;
+          state.currentColor = color;
+        });
+        colorPresetsContainer.appendChild(btn);
+      });
+    }
+
+    // Get cell at mouse position
+    function getCellFromMouse(e, canvas) {
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = canvas.width / rect.width;
+      const scaleY = canvas.height / rect.height;
+      const x = (e.clientX - rect.left) * scaleX;
+      const y = (e.clientY - rect.top) * scaleY;
+
+      const cellSize = canvas.width / state.gridSize;
+
+      if (state.gridType === 'square') {
+        return {
+          col: Math.floor(x / cellSize),
+          row: Math.floor(y / cellSize)
+        };
+      } else if (state.gridType === 'diamond') {
+        // Diamond grid is a rotated square grid
+        const centerX = canvas.width / 2;
+        const centerY = canvas.height / 2;
+
+        // Transform to rotated coordinates
+        const dx = x - centerX;
+        const dy = y - centerY;
+        const angle = -Math.PI / 4; // -45 degrees
+        const rx = dx * Math.cos(angle) - dy * Math.sin(angle);
+        const ry = dx * Math.sin(angle) + dy * Math.cos(angle);
+
+        const diamondSize = (canvas.width / Math.sqrt(2)) / state.gridSize;
+
+        return {
+          col: Math.floor((rx + canvas.width / Math.sqrt(2) / 2) / diamondSize),
+          row: Math.floor((ry + canvas.width / Math.sqrt(2) / 2) / diamondSize)
+        };
+      } else if (state.gridType === 'triangle') {
+        // Triangular grid (equilateral triangles)
+        const triHeight = cellSize * Math.sqrt(3) / 2;
+        const row = Math.floor(y / triHeight);
+        const col = Math.floor(x / cellSize);
+
+        // Determine if we're in upper or lower triangle
+        const localX = x % cellSize;
+        const localY = y % triHeight;
+        const isUpper = (col % 2 === 0) ?
+          (localY < triHeight - (localX / cellSize) * triHeight) :
+          (localY < (localX / cellSize) * triHeight);
+
+        return {
+          col: col,
+          row: row * 2 + (isUpper ? 0 : 1)
+        };
+      }
+    }
+
+    // Draw grid
+    function drawGrid(ctx, canvas) {
+      const cellSize = canvas.width / state.gridSize;
+
+      ctx.strokeStyle = 'rgba(148, 163, 184, 0.3)';
+      ctx.lineWidth = 1;
+
+      if (state.gridType === 'square') {
+        for (let i = 0; i <= state.gridSize; i++) {
+          ctx.beginPath();
+          ctx.moveTo(i * cellSize, 0);
+          ctx.lineTo(i * cellSize, canvas.height);
+          ctx.stroke();
+
+          ctx.beginPath();
+          ctx.moveTo(0, i * cellSize);
+          ctx.lineTo(canvas.width, i * cellSize);
+          ctx.stroke();
+        }
+      } else if (state.gridType === 'diamond') {
+        ctx.save();
+        ctx.translate(canvas.width / 2, canvas.height / 2);
+        ctx.rotate(Math.PI / 4);
+
+        const diamondSize = (canvas.width / Math.sqrt(2)) / state.gridSize;
+        const offset = (canvas.width / Math.sqrt(2)) / 2;
+
+        for (let i = 0; i <= state.gridSize; i++) {
+          ctx.beginPath();
+          ctx.moveTo(i * diamondSize - offset, -offset);
+          ctx.lineTo(i * diamondSize - offset, offset);
+          ctx.stroke();
+
+          ctx.beginPath();
+          ctx.moveTo(-offset, i * diamondSize - offset);
+          ctx.lineTo(offset, i * diamondSize - offset);
+          ctx.stroke();
+        }
+        ctx.restore();
+      } else if (state.gridType === 'triangle') {
+        const triHeight = cellSize * Math.sqrt(3) / 2;
+
+        for (let row = 0; row <= state.gridSize * 2; row++) {
+          for (let col = 0; col <= state.gridSize; col++) {
+            const x = col * cellSize;
+            const y = row * triHeight / 2;
+
+            ctx.beginPath();
+            if (row % 2 === 0) {
+              if (col % 2 === 0) {
+                ctx.moveTo(x, y);
+                ctx.lineTo(x + cellSize, y);
+              }
+            }
+            ctx.stroke();
+
+            if (col < state.gridSize) {
+              ctx.beginPath();
+              ctx.moveTo(x, y);
+              ctx.lineTo(x + cellSize / 2, y + triHeight / 2);
+              ctx.stroke();
+
+              ctx.beginPath();
+              ctx.moveTo(x + cellSize, y);
+              ctx.lineTo(x + cellSize / 2, y + triHeight / 2);
+              ctx.stroke();
+            }
+          }
+        }
+      }
+    }
+
+    // Draw cell
+    function drawCell(ctx, canvas, col, row, color) {
+      const cellSize = canvas.width / state.gridSize;
+
+      if (state.gridType === 'square') {
+        ctx.fillStyle = color;
+        ctx.fillRect(col * cellSize, row * cellSize, cellSize, cellSize);
+      } else if (state.gridType === 'diamond') {
+        ctx.save();
+        ctx.translate(canvas.width / 2, canvas.height / 2);
+        ctx.rotate(Math.PI / 4);
+
+        const diamondSize = (canvas.width / Math.sqrt(2)) / state.gridSize;
+        const offset = (canvas.width / Math.sqrt(2)) / 2;
+
+        ctx.fillStyle = color;
+        ctx.fillRect(
+          col * diamondSize - offset,
+          row * diamondSize - offset,
+          diamondSize,
+          diamondSize
+        );
+        ctx.restore();
+      } else if (state.gridType === 'triangle') {
+        const triHeight = cellSize * Math.sqrt(3) / 2;
+        const baseRow = Math.floor(row / 2);
+        const isUpper = row % 2 === 0;
+        const x = col * cellSize;
+        const y = baseRow * triHeight;
+
+        ctx.fillStyle = color;
+        ctx.beginPath();
+
+        if (col % 2 === 0) {
+          if (isUpper) {
+            ctx.moveTo(x, y);
+            ctx.lineTo(x + cellSize, y);
+            ctx.lineTo(x + cellSize / 2, y + triHeight);
+          } else {
+            ctx.moveTo(x, y + triHeight);
+            ctx.lineTo(x + cellSize, y + triHeight);
+            ctx.lineTo(x + cellSize / 2, y);
+          }
+        } else {
+          if (isUpper) {
+            ctx.moveTo(x, y + triHeight);
+            ctx.lineTo(x + cellSize, y + triHeight);
+            ctx.lineTo(x + cellSize / 2, y);
+          } else {
+            ctx.moveTo(x, y);
+            ctx.lineTo(x + cellSize, y);
+            ctx.lineTo(x + cellSize / 2, y + triHeight);
+          }
+        }
+        ctx.closePath();
+        ctx.fill();
+      }
+    }
+
+    // Render editor canvas
+    function renderEditor() {
+      editorCtx.fillStyle = '#ffffff';
+      editorCtx.fillRect(0, 0, editorCanvas.width, editorCanvas.height);
+
+      // Draw filled cells
+      state.cells.forEach((color, key) => {
+        const [col, row] = key.split(',').map(Number);
+        drawCell(editorCtx, editorCanvas, col, row, color);
+      });
+
+      // Draw grid
+      if (state.showGrid) {
+        drawGrid(editorCtx, editorCanvas);
+      }
+    }
+
+    // Render preview canvas (3x3 pattern)
+    function renderPreview() {
+      previewCtx.fillStyle = '#ffffff';
+      previewCtx.fillRect(0, 0, previewCanvas.width, previewCanvas.height);
+
+      const tileSize = previewCanvas.width / 3;
+
+      for (let py = 0; py < 3; py++) {
+        for (let px = 0; px < 3; px++) {
+          previewCtx.save();
+          previewCtx.translate(px * tileSize, py * tileSize);
+          previewCtx.scale(tileSize / editorCanvas.width, tileSize / editorCanvas.height);
+
+          // Draw filled cells
+          state.cells.forEach((color, key) => {
+            const [col, row] = key.split(',').map(Number);
+            drawCell(previewCtx, editorCanvas, col, row, color);
+          });
+
+          previewCtx.restore();
+        }
+      }
+    }
+
+    // Handle mouse events
+    let isDrawing = false;
+
+    editorCanvas.addEventListener('mousedown', (e) => {
+      isDrawing = true;
+      handleDraw(e);
+    });
+
+    editorCanvas.addEventListener('mousemove', (e) => {
+      if (isDrawing) {
+        handleDraw(e);
+      }
+    });
+
+    editorCanvas.addEventListener('mouseup', () => {
+      isDrawing = false;
+    });
+
+    editorCanvas.addEventListener('mouseleave', () => {
+      isDrawing = false;
+    });
+
+    editorCanvas.addEventListener('click', handleDraw);
+
+    function handleDraw(e) {
+      const cell = getCellFromMouse(e, editorCanvas);
+      if (cell) {
+        const key = `${cell.col},${cell.row}`;
+
+        // Toggle or fill
+        if (e.shiftKey || e.ctrlKey) {
+          // Erase with shift or ctrl
+          state.cells.delete(key);
+        } else {
+          state.cells.set(key, state.currentColor);
+        }
+
+        renderEditor();
+        renderPreview();
+      }
+    }
+
+    // Event listeners
+    gridTypeSelect.addEventListener('change', (e) => {
+      state.gridType = e.target.value;
+      state.cells.clear();
+      renderEditor();
+      renderPreview();
+    });
+
+    gridSizeSlider.addEventListener('input', (e) => {
+      state.gridSize = parseInt(e.target.value);
+      gridSizeValue.textContent = state.gridSize;
+      state.cells.clear();
+      renderEditor();
+      renderPreview();
+    });
+
+    colorPicker.addEventListener('input', (e) => {
+      state.currentColor = e.target.value;
+    });
+
+    toggleGridBtn.addEventListener('click', () => {
+      state.showGrid = !state.showGrid;
+      toggleGridBtn.textContent = state.showGrid ? 'Hide Grid Lines' : 'Show Grid Lines';
+      renderEditor();
+    });
+
+    clearBtn.addEventListener('click', () => {
+      state.cells.clear();
+      renderEditor();
+      renderPreview();
+      status.textContent = 'Canvas cleared';
+    });
+
+    fillBtn.addEventListener('click', () => {
+      for (let row = 0; row < state.gridSize; row++) {
+        for (let col = 0; col < state.gridSize; col++) {
+          const key = `${col},${row}`;
+          state.cells.set(key, state.currentColor);
+        }
+      }
+      renderEditor();
+      renderPreview();
+      status.textContent = 'Canvas filled';
+    });
+
+    // Export functions
+    function downloadCanvas(canvas, filename) {
+      canvas.toBlob(blob => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      });
+    }
+
+    exportTileBtn.addEventListener('click', () => {
+      downloadCanvas(editorCanvas, 'pattern-tile.png');
+      status.textContent = 'Tile exported';
+    });
+
+    exportPatternBtn.addEventListener('click', () => {
+      downloadCanvas(previewCanvas, 'pattern-preview.png');
+      status.textContent = 'Pattern exported';
+    });
+
+    exportSvgBtn.addEventListener('click', () => {
+      const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      svg.setAttribute('width', editorCanvas.width);
+      svg.setAttribute('height', editorCanvas.height);
+      svg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+
+      const cellSize = editorCanvas.width / state.gridSize;
+
+      state.cells.forEach((color, key) => {
+        const [col, row] = key.split(',').map(Number);
+
+        if (state.gridType === 'square') {
+          const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+          rect.setAttribute('x', col * cellSize);
+          rect.setAttribute('y', row * cellSize);
+          rect.setAttribute('width', cellSize);
+          rect.setAttribute('height', cellSize);
+          rect.setAttribute('fill', color);
+          svg.appendChild(rect);
+        } else if (state.gridType === 'triangle') {
+          const triHeight = cellSize * Math.sqrt(3) / 2;
+          const baseRow = Math.floor(row / 2);
+          const isUpper = row % 2 === 0;
+          const x = col * cellSize;
+          const y = baseRow * triHeight;
+
+          const polygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+
+          let points;
+          if (col % 2 === 0) {
+            if (isUpper) {
+              points = `${x},${y} ${x + cellSize},${y} ${x + cellSize / 2},${y + triHeight}`;
+            } else {
+              points = `${x},${y + triHeight} ${x + cellSize},${y + triHeight} ${x + cellSize / 2},${y}`;
+            }
+          } else {
+            if (isUpper) {
+              points = `${x},${y + triHeight} ${x + cellSize},${y + triHeight} ${x + cellSize / 2},${y}`;
+            } else {
+              points = `${x},${y} ${x + cellSize},${y} ${x + cellSize / 2},${y + triHeight}`;
+            }
+          }
+
+          polygon.setAttribute('points', points);
+          polygon.setAttribute('fill', color);
+          svg.appendChild(polygon);
+        }
+      });
+
+      const svgData = new XMLSerializer().serializeToString(svg);
+      const blob = new Blob([svgData], { type: 'image/svg+xml' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'pattern.svg';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      status.textContent = 'SVG exported';
+    });
+
+    // Initialize
+    initColorPresets();
+    renderEditor();
+    renderPreview();
+  </script>
+</body>
+</html>
