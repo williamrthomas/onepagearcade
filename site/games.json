@@ -113,6 +113,14 @@
       "file": "/games/m03-synth-piano.html"
     },
     {
+      "id": "g08",
+      "title": "Pickup Racer",
+      "category": "games",
+      "description": "Navigate your white pickup truck through endless highway traffic",
+      "playTime": "5-15 min",
+      "file": "/games/g08-pickup-racer.html"
+    },
+    {
       "id": "g07",
       "title": "Choose Your Adventure (Placeholder)",
       "category": "games",
