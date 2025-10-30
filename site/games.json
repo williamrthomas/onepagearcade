@@ -74,11 +74,11 @@
     },
     {
       "id": "g06",
-      "title": "15-Puzzle (Placeholder)",
+      "title": "Triangle Harmony",
       "category": "games",
-      "description": "Coming soon - Classic sliding tile puzzle with move tracking",
-      "playTime": "TBD",
-      "file": "#"
+      "description": "Match colored triangle edges to create beautiful geometric patterns",
+      "playTime": "5-15 min",
+      "file": "/games/g06-triangle-harmony.html"
     },
     {
       "id": "u02",
@@ -95,6 +95,14 @@
       "description": "Compare A*, Dijkstra, BFS, and Greedy Best-First in real-time",
       "playTime": "5-15 min",
       "file": "/games/l02-pathfinding.html"
+    },
+    {
+      "id": "l03",
+      "title": "Graph Algorithm Visualizer",
+      "category": "learning",
+      "description": "Explore graph traversal with BFS, DFS, Dijkstra, and Prim's MST",
+      "playTime": "5-15 min",
+      "file": "/games/l03-graph-algorithms.html"
     },
     {
       "id": "m02",
@@ -122,11 +130,11 @@
     },
     {
       "id": "g07",
-      "title": "Choose Your Adventure (Placeholder)",
-      "category": "games",
-      "description": "Coming soon - Branching narrative with multiple endings",
-      "playTime": "TBD",
-      "file": "#"
+      "title": "Pattern Maker",
+      "category": "art",
+      "description": "Create seamless repeating patterns with geometric grids and color",
+      "playTime": "5-20 min",
+      "file": "/games/g07-pattern-maker.html"
     }
   ]
 }

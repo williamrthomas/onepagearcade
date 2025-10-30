@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Triangle Harmony - One-Page Arcade</title>
+  <style>
+    :root {
+      --bg: #020617;
+      --fg: #f1f5f9;
+      --accent: #38bdf8;
+      --panel: rgba(15, 23, 42, 0.85);
+      --success: #22c55e;
+      --warning: #eab308;
+      --error: #ef4444;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: linear-gradient(135deg, #020617 0%, #0f172a 50%, #1e293b 100%);
+      color: var(--fg);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    .container {
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      grid-template-rows: auto 1fr auto;
+      min-height: 100vh;
+      gap: 16px;
+      padding: 16px;
+    }
+
+    header {
+      grid-column: 1 / -1;
+      background: var(--panel);
+      backdrop-filter: blur(18px);
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      border-radius: 16px;
+      padding: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    h1 {
+      font-size: 24px;
+      font-weight: 700;
+      background: linear-gradient(135deg, #38bdf8, #818cf8, #c084fc);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    aside {
+      background: var(--panel);
+      backdrop-filter: blur(18px);
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      border-radius: 16px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+      height: fit-content;
+    }
+
+    main {
+      background: var(--panel);
+      backdrop-filter: blur(18px);
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      border-radius: 16px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 600px;
+    }
+
+    footer {
+      grid-column: 1 / -1;
+      background: var(--panel);
+      backdrop-filter: blur(18px);
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      border-radius: 16px;
+      padding: 20px;
+      text-align: center;
+      font-size: 14px;
+      color: rgba(241, 245, 249, 0.7);
+    }
+
+    section {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    h2 {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--accent);
+      margin-bottom: 4px;
+    }
+
+    button {
+      appearance: none;
+      background: rgba(56, 189, 248, 0.15);
+      border: 1px solid rgba(56, 189, 248, 0.45);
+      border-radius: 10px;
+      color: var(--fg);
+      padding: 10px 16px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 150ms ease;
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+      border-color: #0ea5e9;
+      box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.35);
+      background: rgba(56, 189, 248, 0.25);
+    }
+
+    button:active {
+      transform: translateY(0);
+    }
+
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .btn-level {
+      background: rgba(139, 92, 246, 0.15);
+      border-color: rgba(139, 92, 246, 0.45);
+    }
+
+    .btn-level:hover {
+      border-color: #8b5cf6;
+      box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.35);
+      background: rgba(139, 92, 246, 0.25);
+    }
+
+    .btn-level.active {
+      background: rgba(139, 92, 246, 0.35);
+      border-color: #8b5cf6;
+    }
+
+    .stat {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px;
+      background: rgba(15, 23, 42, 0.65);
+      border: 1px solid rgba(148, 163, 184, 0.3);
+      border-radius: 8px;
+    }
+
+    .stat-label {
+      font-size: 14px;
+      color: rgba(241, 245, 249, 0.7);
+    }
+
+    .stat-value {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    #canvas {
+      max-width: 100%;
+      max-height: 80vh;
+      display: block;
+      cursor: pointer;
+      filter: drop-shadow(0 0 20px rgba(56, 189, 248, 0.2));
+    }
+
+    .instructions {
+      font-size: 13px;
+      line-height: 1.6;
+      color: rgba(241, 245, 249, 0.8);
+      padding: 16px;
+      background: rgba(15, 23, 42, 0.5);
+      border-radius: 8px;
+      border-left: 3px solid var(--accent);
+    }
+
+    .instructions ul {
+      margin-left: 20px;
+      margin-top: 8px;
+    }
+
+    .instructions li {
+      margin-bottom: 4px;
+    }
+
+    .victory-message {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(0);
+      background: var(--panel);
+      backdrop-filter: blur(18px);
+      border: 2px solid var(--success);
+      border-radius: 16px;
+      padding: 40px;
+      text-align: center;
+      z-index: 1000;
+      animation: victoryPop 0.5s ease forwards;
+      box-shadow: 0 0 50px rgba(34, 197, 94, 0.5);
+    }
+
+    @keyframes victoryPop {
+      0% {
+        transform: translate(-50%, -50%) scale(0);
+        opacity: 0;
+      }
+      50% {
+        transform: translate(-50%, -50%) scale(1.1);
+      }
+      100% {
+        transform: translate(-50%, -50%) scale(1);
+        opacity: 1;
+      }
+    }
+
+    .victory-message h2 {
+      font-size: 32px;
+      color: var(--success);
+      margin-bottom: 16px;
+    }
+
+    .victory-message p {
+      font-size: 18px;
+      margin-bottom: 24px;
+    }
+
+    @media (max-width: 768px) {
+      .container {
+        grid-template-columns: 1fr;
+        gap: 12px;
+        padding: 12px;
+      }
+
+      aside {
+        order: 2;
+      }
+
+      main {
+        order: 1;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🔺 Triangle Harmony</h1>
+      <div class="header-actions">
+        <button onclick="window.close(); window.location.href='/';">← Back to Arcade</button>
+        <button onclick="newGame()">New Game</button>
+      </div>
+    </header>
+
+    <aside>
+      <section>
+        <h2>Difficulty</h2>
+        <button class="btn-level active" onclick="setLevel('easy')">Easy (3×3)</button>
+        <button class="btn-level" onclick="setLevel('medium')">Medium (4×4)</button>
+        <button class="btn-level" onclick="setLevel('hard')">Hard (5×5)</button>
+      </section>
+
+      <section>
+        <h2>Statistics</h2>
+        <div class="stat">
+          <span class="stat-label">Moves</span>
+          <span class="stat-value" id="moves">0</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">Matches</span>
+          <span class="stat-value" id="matches">0</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">Progress</span>
+          <span class="stat-value" id="progress">0%</span>
+        </div>
+      </section>
+
+      <section>
+        <h2>Colors</h2>
+        <button onclick="toggleColorMode()">Switch Palette</button>
+      </section>
+
+      <section>
+        <div class="instructions">
+          <strong>How to Play:</strong>
+          <ul>
+            <li>Click any triangle to rotate it 120°</li>
+            <li>Match adjacent edges by color</li>
+            <li>Matched edges glow brighter</li>
+            <li>Complete all matches to win!</li>
+          </ul>
+        </div>
+      </section>
+    </aside>
+
+    <main>
+      <canvas id="canvas"></canvas>
+    </main>
+
+    <footer>
+      <p>Create harmony by matching colored triangle edges. Click triangles to rotate them!</p>
+    </footer>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+
+    // Color palettes
+    const colorPalettes = [
+      ['#ef4444', '#3b82f6', '#22c55e', '#eab308', '#a855f7', '#ec4899'],
+      ['#ff6b6b', '#4ecdc4', '#45b7d1', '#f9ca24', '#6c5ce7', '#fd79a8'],
+      ['#e74c3c', '#3498db', '#2ecc71', '#f39c12', '#9b59b6', '#1abc9c'],
+      ['#ff0080', '#00ffff', '#ffff00', '#00ff00', '#ff00ff', '#ff8000']
+    ];
+    let currentPaletteIndex = 0;
+    let colors = colorPalettes[currentPaletteIndex];
+
+    // Game state
+    let level = 'easy';
+    let gridSize = 3;
+    let triangles = [];
+    let moves = 0;
+    let matches = 0;
+    let totalPossibleMatches = 0;
+    let triangleSize = 80;
+
+    // Triangle class
+    class Triangle {
+      constructor(x, y, rotation, colors, index) {
+        this.x = x;
+        this.y = y;
+        this.rotation = rotation; // 0, 120, or 240 degrees
+        this.colors = colors; // [top, bottomRight, bottomLeft]
+        this.index = index;
+        this.neighbors = { top: null, bottomRight: null, bottomLeft: null };
+      }
+
+      containsPoint(px, py) {
+        const size = triangleSize;
+        const h = (Math.sqrt(3) / 2) * size;
+
+        // Triangle vertices
+        const x1 = this.x;
+        const y1 = this.y - (2 * h / 3);
+        const x2 = this.x + size / 2;
+        const y2 = this.y + (h / 3);
+        const x3 = this.x - size / 2;
+        const y3 = this.y + (h / 3);
+
+        // Check if point is inside triangle using barycentric coordinates
+        const v0x = x2 - x1;
+        const v0y = y2 - y1;
+        const v1x = x3 - x1;
+        const v1y = y3 - y1;
+        const v2x = px - x1;
+        const v2y = py - y1;
+
+        const dot00 = v0x * v0x + v0y * v0y;
+        const dot01 = v0x * v1x + v0y * v1y;
+        const dot02 = v0x * v2x + v0y * v2y;
+        const dot11 = v1x * v1x + v1y * v1y;
+        const dot12 = v1x * v2x + v1y * v2y;
+
+        const invDenom = 1 / (dot00 * dot11 - dot01 * dot01);
+        const u = (dot11 * dot02 - dot01 * dot12) * invDenom;
+        const v = (dot00 * dot12 - dot01 * dot02) * invDenom;
+
+        return (u >= 0) && (v >= 0) && (u + v <= 1);
+      }
+
+      rotate() {
+        this.rotation = (this.rotation + 120) % 360;
+      }
+
+      getEdgeColor(edge) {
+        // Rotate edge indices based on current rotation
+        const rotationSteps = this.rotation / 120;
+        const edgeMap = { top: 0, bottomRight: 1, bottomLeft: 2 };
+        const colorIndex = (edgeMap[edge] + rotationSteps) % 3;
+        return this.colors[colorIndex];
+      }
+
+      draw(isMatched) {
+        const size = triangleSize;
+        const h = (Math.sqrt(3) / 2) * size;
+
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        ctx.rotate((this.rotation * Math.PI) / 180);
+
+        // Draw triangle body with gradient
+        const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, size);
+        gradient.addColorStop(0, 'rgba(30, 41, 59, 0.9)');
+        gradient.addColorStop(1, 'rgba(15, 23, 42, 0.95)');
+
+        ctx.beginPath();
+        ctx.moveTo(0, -(2 * h / 3));
+        ctx.lineTo(size / 2, h / 3);
+        ctx.lineTo(-size / 2, h / 3);
+        ctx.closePath();
+        ctx.fillStyle = gradient;
+        ctx.fill();
+
+        // Draw colored edges
+        const edgeWidth = 8;
+
+        // Top edge
+        ctx.beginPath();
+        ctx.moveTo(0, -(2 * h / 3));
+        ctx.lineTo(size / 2, h / 3);
+        ctx.lineWidth = edgeWidth;
+        ctx.strokeStyle = this.colors[0];
+        ctx.lineCap = 'round';
+        ctx.stroke();
+
+        // Bottom right edge
+        ctx.beginPath();
+        ctx.moveTo(size / 2, h / 3);
+        ctx.lineTo(-size / 2, h / 3);
+        ctx.lineWidth = edgeWidth;
+        ctx.strokeStyle = this.colors[1];
+        ctx.stroke();
+
+        // Bottom left edge
+        ctx.beginPath();
+        ctx.moveTo(-size / 2, h / 3);
+        ctx.lineTo(0, -(2 * h / 3));
+        ctx.lineWidth = edgeWidth;
+        ctx.strokeStyle = this.colors[2];
+        ctx.stroke();
+
+        // Add glow effect for matched edges
+        if (isMatched && isMatched.length > 0) {
+          ctx.shadowBlur = 20;
+          ctx.shadowColor = 'rgba(56, 189, 248, 0.8)';
+
+          isMatched.forEach(edge => {
+            ctx.beginPath();
+            if (edge === 'top') {
+              ctx.moveTo(0, -(2 * h / 3));
+              ctx.lineTo(size / 2, h / 3);
+            } else if (edge === 'bottomRight') {
+              ctx.moveTo(size / 2, h / 3);
+              ctx.lineTo(-size / 2, h / 3);
+            } else if (edge === 'bottomLeft') {
+              ctx.moveTo(-size / 2, h / 3);
+              ctx.lineTo(0, -(2 * h / 3));
+            }
+            ctx.lineWidth = edgeWidth + 4;
+            ctx.strokeStyle = this.getEdgeColor(edge);
+            ctx.stroke();
+          });
+        }
+
+        ctx.restore();
+      }
+    }
+
+    function initGame() {
+      // Set canvas size
+      const maxSize = Math.min(window.innerWidth - 400, window.innerHeight - 200, 800);
+      canvas.width = maxSize;
+      canvas.height = maxSize;
+
+      // Calculate grid
+      triangles = [];
+      const spacing = maxSize / (gridSize + 1);
+      triangleSize = spacing * 0.7;
+
+      let index = 0;
+      for (let row = 0; row < gridSize; row++) {
+        for (let col = 0; col < gridSize; col++) {
+          const x = spacing * (col + 1);
+          const y = spacing * (row + 1);
+
+          // Random colors for each edge
+          const triColors = [
+            colors[Math.floor(Math.random() * colors.length)],
+            colors[Math.floor(Math.random() * colors.length)],
+            colors[Math.floor(Math.random() * colors.length)]
+          ];
+
+          const rotation = [0, 120, 240][Math.floor(Math.random() * 3)];
+          triangles.push(new Triangle(x, y, rotation, triColors, index));
+          index++;
+        }
+      }
+
+      // Calculate neighbors for matching
+      for (let i = 0; i < triangles.length; i++) {
+        const row = Math.floor(i / gridSize);
+        const col = i % gridSize;
+
+        // Right neighbor
+        if (col < gridSize - 1) {
+          triangles[i].neighbors.right = triangles[i + 1];
+        }
+
+        // Bottom neighbor
+        if (row < gridSize - 1) {
+          triangles[i].neighbors.bottom = triangles[i + gridSize];
+        }
+      }
+
+      // Calculate total possible matches
+      totalPossibleMatches = (gridSize - 1) * gridSize * 2; // Horizontal and vertical edges
+
+      moves = 0;
+      updateStats();
+      draw();
+    }
+
+    function draw() {
+      ctx.fillStyle = '#020617';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Calculate matches
+      const matchedEdges = new Map();
+      matches = 0;
+
+      triangles.forEach((tri, i) => {
+        const row = Math.floor(i / gridSize);
+        const col = i % gridSize;
+
+        const triMatches = [];
+
+        // Check right neighbor
+        if (col < gridSize - 1) {
+          const rightTri = triangles[i + 1];
+          const rightEdgeColor = tri.getEdgeColor('bottomRight');
+          const leftEdgeColor = rightTri.getEdgeColor('bottomLeft');
+
+          if (rightEdgeColor === leftEdgeColor) {
+            triMatches.push('bottomRight');
+            if (!matchedEdges.has(rightTri.index)) {
+              matchedEdges.set(rightTri.index, []);
+            }
+            matchedEdges.get(rightTri.index).push('bottomLeft');
+            matches++;
+          }
+        }
+
+        // Check bottom neighbor
+        if (row < gridSize - 1) {
+          const bottomTri = triangles[i + gridSize];
+          const bottomEdgeColor = tri.getEdgeColor('bottomLeft');
+          const topEdgeColor = bottomTri.getEdgeColor('top');
+
+          if (bottomEdgeColor === topEdgeColor) {
+            triMatches.push('bottomLeft');
+            if (!matchedEdges.has(bottomTri.index)) {
+              matchedEdges.set(bottomTri.index, []);
+            }
+            matchedEdges.get(bottomTri.index).push('top');
+            matches++;
+          }
+        }
+
+        if (triMatches.length > 0) {
+          matchedEdges.set(tri.index, triMatches);
+        }
+      });
+
+      // Draw all triangles
+      triangles.forEach(tri => {
+        tri.draw(matchedEdges.get(tri.index) || []);
+      });
+
+      updateStats();
+      checkVictory();
+    }
+
+    function updateStats() {
+      document.getElementById('moves').textContent = moves;
+      document.getElementById('matches').textContent = matches;
+      const progress = Math.round((matches / totalPossibleMatches) * 100);
+      document.getElementById('progress').textContent = progress + '%';
+    }
+
+    function checkVictory() {
+      if (matches === totalPossibleMatches && totalPossibleMatches > 0) {
+        setTimeout(() => {
+          showVictory();
+        }, 500);
+      }
+    }
+
+    function showVictory() {
+      const victory = document.createElement('div');
+      victory.className = 'victory-message';
+      victory.innerHTML = `
+        <h2>🎉 Perfect Harmony!</h2>
+        <p>You completed the puzzle in <strong>${moves}</strong> moves!</p>
+        <button onclick="this.parentElement.remove(); newGame();">Play Again</button>
+      `;
+      document.body.appendChild(victory);
+
+      // Save best score
+      const key = `triangleHarmony_${level}`;
+      const bestMoves = localStorage.getItem(key);
+      if (!bestMoves || moves < parseInt(bestMoves)) {
+        localStorage.setItem(key, moves);
+      }
+    }
+
+    function setLevel(newLevel) {
+      level = newLevel;
+
+      // Update button states
+      document.querySelectorAll('.btn-level').forEach(btn => {
+        btn.classList.remove('active');
+      });
+      event.target.classList.add('active');
+
+      // Set grid size
+      if (level === 'easy') gridSize = 3;
+      else if (level === 'medium') gridSize = 4;
+      else if (level === 'hard') gridSize = 5;
+
+      newGame();
+    }
+
+    function toggleColorMode() {
+      currentPaletteIndex = (currentPaletteIndex + 1) % colorPalettes.length;
+      colors = colorPalettes[currentPaletteIndex];
+      newGame();
+    }
+
+    function newGame() {
+      initGame();
+    }
+
+    // Canvas click handler
+    canvas.addEventListener('click', (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+
+      // Scale coordinates
+      const scaleX = canvas.width / rect.width;
+      const scaleY = canvas.height / rect.height;
+      const scaledX = x * scaleX;
+      const scaledY = y * scaleY;
+
+      // Find clicked triangle
+      for (let tri of triangles) {
+        if (tri.containsPoint(scaledX, scaledY)) {
+          tri.rotate();
+          moves++;
+          draw();
+          break;
+        }
+      }
+    });
+
+    // Touch support
+    canvas.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      const rect = canvas.getBoundingClientRect();
+      const touch = e.touches[0];
+      const x = touch.clientX - rect.left;
+      const y = touch.clientY - rect.top;
+
+      const scaleX = canvas.width / rect.width;
+      const scaleY = canvas.height / rect.height;
+      const scaledX = x * scaleX;
+      const scaledY = y * scaleY;
+
+      for (let tri of triangles) {
+        if (tri.containsPoint(scaledX, scaledY)) {
+          tri.rotate();
+          moves++;
+          draw();
+          break;
+        }
+      }
+    });
+
+    // Responsive resize
+    window.addEventListener('resize', () => {
+      initGame();
+    });
+
+    // Initialize game on load
+    initGame();
+  </script>
+</body>
+</html>
