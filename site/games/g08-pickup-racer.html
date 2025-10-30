@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>G08: Pickup Racer - Infinite Highway Rush</title>
+  <style>
+    :root {
+      --bg: #020617;
+      --fg: #f1f5f9;
+      --accent: #38bdf8;
+      --accent-hover: #0ea5e9;
+      --panel: rgba(15, 23, 42, 0.85);
+      --border: rgba(56, 189, 248, 0.2);
+      --road: #2d3748;
+      --grass: #22543d;
+      --stripe: #fbbf24;
+      --truck-white: #f8fafc;
+      --danger: #ef4444;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: radial-gradient(ellipse at top, #1e3a8a 0%, var(--bg) 50%);
+      color: var(--fg);
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      grid-template-rows: auto 1fr auto;
+      gap: 16px;
+      padding: 16px;
+      color-scheme: dark;
+    }
+
+    header {
+      grid-column: 1 / -1;
+      text-align: center;
+      padding: 20px;
+      background: var(--panel);
+      backdrop-filter: blur(10px);
+      border-radius: 12px;
+      border: 1px solid var(--border);
+    }
+
+    header h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, var(--accent), #a78bfa);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 8px;
+    }
+
+    header p {
+      color: rgba(241, 245, 249, 0.7);
+      font-size: 0.95rem;
+    }
+
+    aside {
+      background: var(--panel);
+      backdrop-filter: blur(10px);
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      padding: 20px;
+      overflow-y: auto;
+      max-height: calc(100vh - 200px);
+    }
+
+    aside h3 {
+      color: var(--accent);
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin: 20px 0 12px 0;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    aside h3:first-child {
+      margin-top: 0;
+    }
+
+    .stat {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px;
+      background: rgba(56, 189, 248, 0.05);
+      border-radius: 8px;
+      margin-bottom: 8px;
+      border: 1px solid var(--border);
+    }
+
+    .stat-label {
+      font-size: 0.85rem;
+      color: rgba(241, 245, 249, 0.7);
+    }
+
+    .stat-value {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    .control-group {
+      margin-bottom: 16px;
+    }
+
+    label {
+      display: block;
+      font-size: 0.85rem;
+      margin-bottom: 6px;
+      color: rgba(241, 245, 249, 0.8);
+    }
+
+    button {
+      width: 100%;
+      padding: 12px;
+      background: linear-gradient(135deg, var(--accent), #0ea5e9);
+      border: none;
+      border-radius: 8px;
+      color: white;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 150ms;
+      font-size: 0.95rem;
+      margin-top: 8px;
+    }
+
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 16px rgba(56, 189, 248, 0.4);
+    }
+
+    button:active {
+      transform: translateY(0);
+    }
+
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    button.secondary {
+      background: rgba(56, 189, 248, 0.1);
+      border: 1px solid var(--border);
+    }
+
+    .difficulty-buttons {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .difficulty-buttons button {
+      padding: 8px;
+      font-size: 0.85rem;
+      margin: 0;
+    }
+
+    .difficulty-buttons button.active {
+      background: linear-gradient(135deg, #22c55e, #16a34a);
+    }
+
+    main {
+      background: var(--panel);
+      backdrop-filter: blur(10px);
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      padding: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      position: relative;
+    }
+
+    #gameCanvas {
+      background: linear-gradient(to bottom, #0c4a6e 0%, #075985 50%, #0c4a6e 100%);
+      border-radius: 8px;
+      border: 2px solid var(--border);
+      box-shadow: 0 0 40px rgba(56, 189, 248, 0.3);
+      max-width: 100%;
+      max-height: 100%;
+    }
+
+    footer {
+      grid-column: 1 / -1;
+      text-align: center;
+      padding: 16px;
+      background: var(--panel);
+      backdrop-filter: blur(10px);
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      font-size: 0.85rem;
+      color: rgba(241, 245, 249, 0.6);
+    }
+
+    .game-over-overlay {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(2, 6, 23, 0.95);
+      backdrop-filter: blur(10px);
+      border: 2px solid var(--accent);
+      border-radius: 16px;
+      padding: 40px;
+      text-align: center;
+      display: none;
+      z-index: 10;
+      min-width: 300px;
+    }
+
+    .game-over-overlay.show {
+      display: block;
+      animation: slideIn 300ms ease-out;
+    }
+
+    @keyframes slideIn {
+      from {
+        transform: translate(-50%, -60%);
+        opacity: 0;
+      }
+      to {
+        transform: translate(-50%, -50%);
+        opacity: 1;
+      }
+    }
+
+    .game-over-overlay h2 {
+      font-size: 2.5rem;
+      margin-bottom: 16px;
+      background: linear-gradient(135deg, var(--danger), #dc2626);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .game-over-overlay .final-score {
+      font-size: 1.5rem;
+      color: var(--accent);
+      margin-bottom: 24px;
+    }
+
+    .instructions {
+      background: rgba(56, 189, 248, 0.05);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px;
+      font-size: 0.85rem;
+      line-height: 1.6;
+      margin-top: 12px;
+    }
+
+    .instructions kbd {
+      background: rgba(56, 189, 248, 0.2);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: monospace;
+      font-weight: 600;
+      color: var(--accent);
+    }
+
+    @media (max-width: 768px) {
+      body {
+        grid-template-columns: 1fr;
+        padding: 8px;
+      }
+
+      aside {
+        max-height: none;
+      }
+
+      #gameCanvas {
+        max-width: 100%;
+        height: auto;
+      }
+
+      .game-over-overlay {
+        padding: 24px;
+        min-width: 250px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Pickup Racer</h1>
+    <p>Navigate your white pickup truck through endless highway traffic. How far can you go?</p>
+  </header>
+
+  <aside>
+    <h3>Statistics</h3>
+    <div class="stat">
+      <span class="stat-label">Distance</span>
+      <span class="stat-value" id="distanceDisplay">0 m</span>
+    </div>
+    <div class="stat">
+      <span class="stat-label">Speed</span>
+      <span class="stat-value" id="speedDisplay">0 km/h</span>
+    </div>
+    <div class="stat">
+      <span class="stat-label">High Score</span>
+      <span class="stat-value" id="highScoreDisplay">0 m</span>
+    </div>
+
+    <h3>Difficulty</h3>
+    <div class="difficulty-buttons">
+      <button class="secondary" data-difficulty="easy">Easy</button>
+      <button class="secondary active" data-difficulty="medium">Medium</button>
+      <button class="secondary" data-difficulty="hard">Hard</button>
+    </div>
+
+    <h3>Controls</h3>
+    <button id="startBtn">Start Game</button>
+    <button id="pauseBtn" class="secondary" disabled>Pause</button>
+
+    <div class="instructions">
+      <strong>How to Play:</strong><br>
+      <kbd>←</kbd> <kbd>→</kbd> or <kbd>A</kbd> <kbd>D</kbd> - Steer left/right<br>
+      <kbd>↑</kbd> or <kbd>W</kbd> - Accelerate<br>
+      <kbd>↓</kbd> or <kbd>S</kbd> - Brake<br>
+      <kbd>Space</kbd> - Pause<br><br>
+      Dodge traffic, go as far as possible!
+    </div>
+  </aside>
+
+  <main>
+    <canvas id="gameCanvas" width="400" height="600"></canvas>
+    <div id="gameOverOverlay" class="game-over-overlay">
+      <h2>Game Over!</h2>
+      <div class="final-score" id="finalScore">Distance: 0 m</div>
+      <button id="restartBtn">Play Again</button>
+    </div>
+  </main>
+
+  <footer>
+    Navigate through traffic without crashing. The faster you go, the higher you score!
+  </footer>
+
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+
+    // Game state
+    let gameState = 'menu'; // menu, playing, paused, gameOver
+    let animationFrameId = null;
+    let highScore = parseInt(localStorage.getItem('pickupRacerHighScore')) || 0;
+
+    // Difficulty settings
+    const difficulties = {
+      easy: { trafficDensity: 0.015, trafficSpeed: 2, maxSpeed: 8 },
+      medium: { trafficDensity: 0.02, trafficSpeed: 3, maxSpeed: 10 },
+      hard: { trafficDensity: 0.025, trafficSpeed: 4, maxSpeed: 12 }
+    };
+    let currentDifficulty = 'medium';
+
+    // Player truck
+    const player = {
+      x: canvas.width / 2 - 20,
+      y: canvas.height - 120,
+      width: 40,
+      height: 70,
+      speed: 0,
+      maxSpeed: 10,
+      acceleration: 0.2,
+      friction: 0.95,
+      lane: 1, // 0, 1, 2 (left, middle, right)
+      targetX: canvas.width / 2 - 20
+    };
+
+    // Game world
+    const world = {
+      roadOffset: 0,
+      roadSpeed: 3,
+      distance: 0,
+      laneWidth: 80,
+      lanes: 3
+    };
+
+    // Traffic
+    const traffic = [];
+    const trafficColors = [
+      '#ef4444', // red
+      '#3b82f6', // blue
+      '#22c55e', // green
+      '#f59e0b', // yellow
+      '#8b5cf6', // purple
+      '#ec4899'  // pink
+    ];
+
+    // Input handling
+    const keys = {
+      left: false,
+      right: false,
+      up: false,
+      down: false
+    };
+
+    // Initialize
+    updateHighScoreDisplay();
+
+    // Event listeners
+    document.addEventListener('keydown', (e) => {
+      if (e.key === ' ' && gameState === 'playing') {
+        e.preventDefault();
+        pauseGame();
+      }
+      if (e.key === 'ArrowLeft' || e.key === 'a') keys.left = true;
+      if (e.key === 'ArrowRight' || e.key === 'd') keys.right = true;
+      if (e.key === 'ArrowUp' || e.key === 'w') keys.up = true;
+      if (e.key === 'ArrowDown' || e.key === 's') keys.down = true;
+    });
+
+    document.addEventListener('keyup', (e) => {
+      if (e.key === 'ArrowLeft' || e.key === 'a') keys.left = false;
+      if (e.key === 'ArrowRight' || e.key === 'd') keys.right = false;
+      if (e.key === 'ArrowUp' || e.key === 'w') keys.up = false;
+      if (e.key === 'ArrowDown' || e.key === 's') keys.down = false;
+    });
+
+    document.getElementById('startBtn').addEventListener('click', startGame);
+    document.getElementById('pauseBtn').addEventListener('click', pauseGame);
+    document.getElementById('restartBtn').addEventListener('click', startGame);
+
+    // Difficulty buttons
+    document.querySelectorAll('[data-difficulty]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        if (gameState !== 'menu') return;
+        document.querySelectorAll('[data-difficulty]').forEach(b => b.classList.remove('active'));
+        e.target.classList.add('active');
+        currentDifficulty = e.target.dataset.difficulty;
+      });
+    });
+
+    // Game functions
+    function startGame() {
+      gameState = 'playing';
+
+      // Reset player
+      player.x = canvas.width / 2 - 20;
+      player.y = canvas.height - 120;
+      player.speed = 0;
+      player.lane = 1;
+      player.targetX = canvas.width / 2 - 20;
+      player.maxSpeed = difficulties[currentDifficulty].maxSpeed;
+
+      // Reset world
+      world.roadOffset = 0;
+      world.roadSpeed = difficulties[currentDifficulty].trafficSpeed;
+      world.distance = 0;
+
+      // Clear traffic
+      traffic.length = 0;
+
+      // Update UI
+      document.getElementById('startBtn').disabled = true;
+      document.getElementById('pauseBtn').disabled = false;
+      document.getElementById('gameOverOverlay').classList.remove('show');
+
+      // Start game loop
+      if (animationFrameId) cancelAnimationFrame(animationFrameId);
+      gameLoop();
+    }
+
+    function pauseGame() {
+      if (gameState === 'playing') {
+        gameState = 'paused';
+        document.getElementById('pauseBtn').textContent = 'Resume';
+      } else if (gameState === 'paused') {
+        gameState = 'playing';
+        document.getElementById('pauseBtn').textContent = 'Pause';
+        gameLoop();
+      }
+    }
+
+    function gameOver() {
+      gameState = 'gameOver';
+
+      // Update high score
+      if (world.distance > highScore) {
+        highScore = world.distance;
+        localStorage.setItem('pickupRacerHighScore', highScore);
+        updateHighScoreDisplay();
+      }
+
+      // Show game over overlay
+      document.getElementById('finalScore').textContent = `Distance: ${world.distance} m`;
+      document.getElementById('gameOverOverlay').classList.add('show');
+      document.getElementById('startBtn').disabled = false;
+      document.getElementById('pauseBtn').disabled = true;
+      document.getElementById('pauseBtn').textContent = 'Pause';
+
+      gameState = 'menu';
+    }
+
+    function updateHighScoreDisplay() {
+      document.getElementById('highScoreDisplay').textContent = `${highScore} m`;
+    }
+
+    function gameLoop() {
+      if (gameState !== 'playing') return;
+
+      update();
+      render();
+
+      animationFrameId = requestAnimationFrame(gameLoop);
+    }
+
+    function update() {
+      // Player input
+      if (keys.left && player.lane > 0) {
+        player.lane--;
+        keys.left = false;
+      }
+      if (keys.right && player.lane < 2) {
+        player.lane++;
+        keys.right = false;
+      }
+
+      // Calculate target X based on lane
+      const laneX = (canvas.width / 2) - (world.laneWidth * 1.5) + (player.lane * world.laneWidth) + (world.laneWidth / 2) - (player.width / 2);
+      player.targetX = laneX;
+
+      // Smooth lane transition
+      player.x += (player.targetX - player.x) * 0.2;
+
+      // Acceleration/Braking
+      if (keys.up) {
+        player.speed = Math.min(player.speed + player.acceleration, player.maxSpeed);
+      } else if (keys.down) {
+        player.speed = Math.max(player.speed - player.acceleration * 2, 0);
+      } else {
+        player.speed *= player.friction;
+      }
+
+      // Update road
+      const totalSpeed = world.roadSpeed + player.speed;
+      world.roadOffset += totalSpeed;
+      world.distance += Math.floor(totalSpeed / 10);
+
+      // Update distance display
+      document.getElementById('distanceDisplay').textContent = `${world.distance} m`;
+      document.getElementById('speedDisplay').textContent = `${Math.floor(totalSpeed * 10)} km/h`;
+
+      // Spawn traffic
+      if (Math.random() < difficulties[currentDifficulty].trafficDensity) {
+        spawnTrafficCar();
+      }
+
+      // Update traffic
+      traffic.forEach((car, index) => {
+        car.y += totalSpeed - car.speed;
+
+        // Remove off-screen cars
+        if (car.y > canvas.height + 100) {
+          traffic.splice(index, 1);
+        }
+      });
+
+      // Collision detection
+      checkCollisions();
+    }
+
+    function spawnTrafficCar() {
+      const lane = Math.floor(Math.random() * 3);
+      const laneX = (canvas.width / 2) - (world.laneWidth * 1.5) + (lane * world.laneWidth) + (world.laneWidth / 2) - 20;
+
+      traffic.push({
+        x: laneX,
+        y: -100,
+        width: 40,
+        height: 70,
+        speed: Math.random() * 2 + 1,
+        color: trafficColors[Math.floor(Math.random() * trafficColors.length)],
+        type: Math.random() > 0.5 ? 'car' : 'truck'
+      });
+    }
+
+    function checkCollisions() {
+      for (let car of traffic) {
+        if (
+          player.x < car.x + car.width &&
+          player.x + player.width > car.x &&
+          player.y < car.y + car.height &&
+          player.y + player.height > car.y
+        ) {
+          gameOver();
+          return;
+        }
+      }
+    }
+
+    function render() {
+      // Clear canvas
+      ctx.fillStyle = '#0c4a6e';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Draw grass
+      ctx.fillStyle = '#22543d';
+      const grassWidth = (canvas.width - world.laneWidth * 3) / 2;
+      ctx.fillRect(0, 0, grassWidth, canvas.height);
+      ctx.fillRect(canvas.width - grassWidth, 0, grassWidth, canvas.height);
+
+      // Draw road
+      ctx.fillStyle = '#2d3748';
+      const roadX = (canvas.width / 2) - (world.laneWidth * 1.5);
+      ctx.fillRect(roadX, 0, world.laneWidth * 3, canvas.height);
+
+      // Draw lane markings
+      ctx.fillStyle = '#fbbf24';
+      const stripeHeight = 30;
+      const stripeGap = 20;
+      const stripeWidth = 4;
+
+      for (let i = 0; i < 3; i++) {
+        const x = roadX + (i * world.laneWidth);
+
+        if (i > 0) {
+          // Draw dashed lines between lanes
+          for (let y = -stripeHeight; y < canvas.height + stripeHeight; y += stripeHeight + stripeGap) {
+            const offsetY = (y + world.roadOffset) % (stripeHeight + stripeGap);
+            ctx.fillRect(x - stripeWidth / 2, offsetY, stripeWidth, stripeHeight);
+          }
+        }
+      }
+
+      // Draw road edges
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(roadX - 3, 0, 3, canvas.height);
+      ctx.fillRect(roadX + world.laneWidth * 3, 0, 3, canvas.height);
+
+      // Draw traffic
+      traffic.forEach(car => {
+        drawVehicle(car.x, car.y, car.width, car.height, car.color, car.type);
+      });
+
+      // Draw player truck (white)
+      drawVehicle(player.x, player.y, player.width, player.height, '#f8fafc', 'truck', true);
+    }
+
+    function drawVehicle(x, y, width, height, color, type, isPlayer = false) {
+      ctx.save();
+
+      // Vehicle body
+      ctx.fillStyle = color;
+      ctx.fillRect(x, y, width, height);
+
+      if (type === 'truck') {
+        // Truck cab (front section)
+        ctx.fillStyle = isPlayer ? '#e2e8f0' : darkenColor(color);
+        ctx.fillRect(x, y + height * 0.6, width, height * 0.4);
+
+        // Truck bed lines
+        ctx.strokeStyle = isPlayer ? '#cbd5e1' : darkenColor(color, 0.3);
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(x, y + height * 0.6);
+        ctx.lineTo(x + width, y + height * 0.6);
+        ctx.stroke();
+      }
+
+      // Windows
+      ctx.fillStyle = '#1e293b';
+      const windowOffset = width * 0.15;
+      ctx.fillRect(x + windowOffset, y + height * 0.65, width - windowOffset * 2, height * 0.2);
+
+      // Headlights/taillights
+      ctx.fillStyle = isPlayer ? '#fbbf24' : '#ef4444';
+      const lightSize = width * 0.2;
+      ctx.fillRect(x + windowOffset, y + height * 0.9, lightSize, lightSize * 0.5);
+      ctx.fillRect(x + width - windowOffset - lightSize, y + height * 0.9, lightSize, lightSize * 0.5);
+
+      // Wheels (just dark circles on the side)
+      ctx.fillStyle = '#000000';
+      const wheelRadius = width * 0.15;
+      ctx.beginPath();
+      ctx.arc(x + wheelRadius, y + height * 0.3, wheelRadius, 0, Math.PI * 2);
+      ctx.arc(x + width - wheelRadius, y + height * 0.3, wheelRadius, 0, Math.PI * 2);
+      ctx.arc(x + wheelRadius, y + height * 0.75, wheelRadius, 0, Math.PI * 2);
+      ctx.arc(x + width - wheelRadius, y + height * 0.75, wheelRadius, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Player glow effect
+      if (isPlayer) {
+        ctx.strokeStyle = 'rgba(56, 189, 248, 0.5)';
+        ctx.lineWidth = 3;
+        ctx.strokeRect(x - 2, y - 2, width + 4, height + 4);
+      }
+
+      ctx.restore();
+    }
+
+    function darkenColor(color, amount = 0.2) {
+      // Simple color darkening
+      const hex = color.replace('#', '');
+      const r = Math.max(0, parseInt(hex.substr(0, 2), 16) * (1 - amount));
+      const g = Math.max(0, parseInt(hex.substr(2, 2), 16) * (1 - amount));
+      const b = Math.max(0, parseInt(hex.substr(4, 2), 16) * (1 - amount));
+      return `rgb(${r}, ${g}, ${b})`;
+    }
+
+    // Initial render
+    render();
+  </script>
+</body>
+</html>
